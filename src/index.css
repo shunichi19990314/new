@@ -40,22 +40,26 @@
 /* Article content styles */
 .article-content {
   line-height: 1.8;
+  font-size: 1rem;
 }
 
 .article-content p {
-  margin-bottom: 1em;
+  margin-bottom: 1.2em;
+  line-height: 1.9;
 }
 
 .article-content img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.5rem;
-  margin: 1em 0;
+  border-radius: 0.75rem;
+  margin: 1.5em 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .article-content a {
   color: #ea580c;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .article-content a:hover {
@@ -67,30 +71,40 @@
 .article-content h3,
 .article-content h4 {
   font-weight: bold;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  line-height: 1.4;
 }
 
-.article-content h1 { font-size: 1.5em; }
-.article-content h2 { font-size: 1.3em; }
-.article-content h3 { font-size: 1.15em; }
+.article-content h1 { font-size: 1.75em; }
+.article-content h2 { font-size: 1.5em; }
+.article-content h3 { font-size: 1.25em; }
+.article-content h4 { font-size: 1.1em; }
 
 .article-content ul,
 .article-content ol {
   padding-left: 1.5em;
-  margin-bottom: 1em;
+  margin-bottom: 1.2em;
 }
 
 .article-content li {
-  margin-bottom: 0.25em;
+  margin-bottom: 0.5em;
+  line-height: 1.8;
 }
 
 .article-content blockquote {
   border-left: 4px solid #ea580c;
-  padding-left: 1em;
-  margin: 1em 0;
+  padding-left: 1.25em;
+  margin: 1.5em 0;
   color: #6b7280;
   font-style: italic;
+  background: #f9fafb;
+  padding: 1em 1.25em;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.dark .article-content blockquote {
+  background: #1f2937;
 }
 
 .article-content pre {
@@ -99,7 +113,7 @@
   padding: 1em;
   border-radius: 0.5rem;
   overflow-x: auto;
-  margin: 1em 0;
+  margin: 1.5em 0;
 }
 
 .article-content code {
@@ -110,5 +124,43 @@
 }
 
 .dark .article-content code {
+  background: #374151;
+}
+
+.article-content figure {
+  margin: 1.5em 0;
+}
+
+.article-content figcaption {
+  text-align: center;
+  font-size: 0.875em;
+  color: #6b7280;
+  margin-top: 0.5em;
+}
+
+.article-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+.article-content th,
+.article-content td {
+  border: 1px solid #e5e7eb;
+  padding: 0.75em;
+  text-align: left;
+}
+
+.dark .article-content th,
+.dark .article-content td {
+  border-color: #374151;
+}
+
+.article-content th {
+  background: #f3f4f6;
+  font-weight: bold;
+}
+
+.dark .article-content th {
   background: #374151;
 }

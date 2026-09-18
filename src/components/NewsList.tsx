@@ -17,7 +17,7 @@ export default function NewsList({ stories, loading, onSelect }: NewsListProps) 
             className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm animate-pulse"
           >
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="flex-shrink-0 w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
                 <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
@@ -74,9 +74,9 @@ function NewsCard({ story, index, onClick }: NewsCardProps) {
       className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-800"
       onClick={onClick}
     >
-      <div className="flex gap-3">
+      <div className="flex gap-4">
         {story.thumbnail && (
-          <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+          <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
             <img
               src={story.thumbnail}
               alt=""
