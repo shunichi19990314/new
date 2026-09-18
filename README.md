@@ -51,15 +51,61 @@ npm run dev
 npm run build
 ```
 
-## 🌐 Renderへのデプロイ
+## 🚀 GitHubに公開する手順
+
+### 1. GitHubで新規リポジトリを作成
+
+1. [GitHub](https://github.com)にログイン
+2. 右上の「+」→「New repository」をクリック
+3. リポジトリ名を入力（例: `latest-news-app`）
+4. 「Public」または「Private」を選択
+5. 「Create repository」をクリック
+
+### 2. ローカルでGitを初期化してプッシュ
+
+ターミナルで以下のコマンドを実行：
+
+```bash
+# Gitを初期化
+git init
+
+# ファイルを追加
+git add .
+
+# 初回コミット
+git commit -m "Initial commit: 日本語ニュースアグリゲーター"
+
+# メインブランチを設定
+git branch -M main
+
+# GitHubリポジトリをリモートに追加（YOUR_USERNAMEとYOUR_REPOを変更）
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+
+# プッシュ
+git push -u origin main
+```
+
+### 3. Renderでデプロイ
+
+1. [Render Dashboard](https://dashboard.render.com/)にアクセス
+2. 「New」→「Static Site」をクリック
+3. GitHubリポジトリを接続（初回はRenderにGitHubアクセスを許可）
+4. 先ほどプッシュしたリポジトリを選択
+5. 設定を確認：
+   - **Build Command**: `npm install && npm run build`
+   - **Publish Directory**: `dist`
+6. 「Create Static Site」をクリック
+7. デプロイ完了後、表示されるURLでサイトにアクセス
+
+### 4. 自動デプロイ
+
+GitHubにプッシュするたびに、Renderが自動的に再デプロイします。
+
+## 🌐 Renderへのデプロイ（詳細）
 
 ### render.yamlを使用（推奨）
 
-1. このリポジトリをGitHubにプッシュ
-2. [Render Dashboard](https://dashboard.render.com/)にアクセス
-3. 「New」→「Static Site」を選択
-4. GitHubリポジトリを接続
-5. render.yamlが自動検出されるので確認してデプロイ
+`render.yaml`ファイルが既に設定されているので、GitHubリポジトリを接続するだけで自動デプロイされます。
 
 ### 手動設定
 
