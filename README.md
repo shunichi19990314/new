@@ -16,6 +16,7 @@
 - 📰 **記事本文取得** - 元サイトのHTMLから記事本文を自動抽出して表示
 - 🖼️ **画像表示** - Open Graph画像や記事内の画像を大きく表示
 - 📝 **リッチコンテンツ** - 見出し、リスト、テーブル、コードブロックなど対応
+- ✨ **AI要約** - Gemini APIで記事を要約（APIキー未設定時は抽出型要約）
 - ↗ **元サイトリンク** - 外部リンクで元記事を開く
 - 📄 **ページネーション** - 15件ずつページ送り
 - 🎨 **レスポンシブデザイン** - スマホ・タブレット・PC対応
@@ -173,3 +174,20 @@ React + TypeScript + Vite + Tailwind CSS + RSS API
 ## 📡 データソース
 
 NHKニュース / Google News 日本語版 / ITmedia
+
+## ✨ AI要約機能について
+
+記事詳細画面で「✨ AI要約を生成」ボタンをクリックすると、記事の内容を要約できます。
+
+### Gemini APIを使う場合（高品質な要約）
+
+1. [Google AI Studio](https://aistudio.google.com/apikey)でAPIキーを取得（無料）
+2. Render Dashboardで`news-api`サービスの「Environment」を開く
+3. 以下を追加：
+   - **Key**: `GEMINI_API_KEY`
+   - **Value**: 取得したAPIキー
+4. バックエンドAPIを再デプロイ
+
+### APIキー未設定の場合
+
+記事の重要な部分を抽出する「抽出型要約」が自動的に使用されます。

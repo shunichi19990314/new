@@ -352,6 +352,88 @@ app.get('/api/article', async (req, res) => {
   }
 });
 
+// 簡易抽出要約関数
+function extractiveSummary(text, maxSentences = 5) {
+  if (!text) return '';
+  
+  // HTMLタグを除去
+  const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  // 文に分割（日本語の句点、感嘆符、疑問符で分割）
+  const sentences = cleanText.split(/(?<=[。！？])/g).filter(s => s.trim().length > 10);
+  
+  if (sentences.length === 0) return '';
+  if (sentences.length <= maxSentences) return sentences.join('');
+  
+  // 最初の数文を抽出
+  return sentences.slice(0, maxSentences).join('');
+}
+
+// Gemini APIを使った要約関数
+async function summarizeWithGemini(text, title) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    console.log('GEMINI_API_KEY not set, using extractive summary');
+    return null;
+  }
+
+  try {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `以下のニュース記事を日本語で300字程度で要約してください。
+
+タイトル: ${title}
+
+記事内容:
+${text.substring(0, 3000)}
+
+要約:`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error('Gemini API error:', error.message);
+    return null;
+  }
+}
+
+// 記事要約API
+app.get('/api/summarize', async (req, res) => {
+  const { content, title } = req.query;
+  
+  if (!content) {
+    return res.status(400).json({ error: 'Content is required' });
+  }
+
+  try {
+    console.log('Generating summary...');
+    
+    // まずGemini APIを試す
+    let summary = await summarizeWithGemini(content, title || '');
+    
+    // Gemini APIが使えない場合は簡易抽出要約
+    if (!summary) {
+      console.log('Using extractive summary');
+      summary = extractiveSummary(content, 5);
+    }
+    
+    res.json({
+      summary,
+      method: summary ? 'ai' : 'extractive',
+    });
+  } catch (error) {
+    console.error('Error generating summary:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate summary',
+      message: error.message 
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 News API server running on port ${PORT}`);
 });
