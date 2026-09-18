@@ -1,2 +1,157 @@
-# new
-Renderで最新ニュース取得コード
+# 📰 Latest News - 日本語ニュースアグリゲーター
+
+日本語の最新ニュースをサイト内で閲覧できるニュースアプリです。
+
+---
+
+## 🚀 GitHub公開 → Renderデプロイ 完全ガイド
+
+> ⏱️ 所要時間：約10分
+> 💰 費用：無料
+
+---
+
+### 📋 必要なもの（事前準備）
+
+| 用意するもの | 無料？ | 取得先 |
+|---|---|---|
+| GitHub アカウント | ✅ 無料 | [github.com](https://github.com/signup) |
+| Render アカウント | ✅ 無料 | [render.com](https://dashboard.render.com/register) |
+| Git（PCにインストール） | ✅ 無料 | [git-scm.com](https://git-scm.com/downloads) |
+
+---
+
+## ステップ 1️⃣ GitHubでリポジトリを作る
+
+> 「リポジトリ」＝ ファイルを保管するオンラインのフォルダ
+
+1. [github.com](https://github.com) にログイン
+2. 画面右上の **「＋」** ボタンをクリック
+3. **「New repository」** をクリック
+4. 以下のように入力：
+
+```
+Repository name:  latest-news-app    ← 好きな名前でOK
+Description:      日本語ニュースアプリ  ← 空欄でもOK
+● Public          ← 「Public」を選んでください
+☑ Add a README   ← チェックを入れる
+```
+
+5. 一番下の **「Create repository」** ボタンをクリック
+
+✅ これでリポジトリができました！
+
+---
+
+## ステップ 2️⃣ 自分のPCのファイルをGitHubに送る
+
+### ターミナル（コマンドプロンプト）を開く
+
+- **Mac**: `Command + Space` → 「ターミナル」と入力
+- **Windows**: `Windowsキー` → 「cmd」または「PowerShell」と入力
+
+### 以下のコマンドを1行ずつコピー＆ペーストして実行
+
+```bash
+# ① プロジェクトのフォルダに移動
+cd プロジェクトのフォルダのパス
+
+# ② Gitを始める宣言
+git init
+
+# ③ ファイルを全部追加
+git add .
+
+# ④ 「最初のバージョン」として保存
+git commit -m "日本語ニュースアプリの初回公開"
+
+# ⑤ ブランチ名をmainに
+git branch -M main
+```
+
+### GitHubのリポジトリURLを接続
+
+GitHubのリポジトリページで **「<> Code」** ボタン → URLをコピーして、以下のように実行：
+
+```bash
+# ⑥ GitHubと接続（YOUR_USERNAME を自分のユーザー名に置き換えてください）
+git remote add origin https://github.com/YOUR_USERNAME/latest-news-app.git
+
+# ⑦ ファイルをGitHubに送信！
+git push -u origin main
+```
+
+> 💡 GitHubからユーザー名とパスワード（トークン）を聞かれたら入力してください
+
+✅ これでGitHubにファイルが公開されました！
+
+---
+
+## ステップ 3️⃣ Renderでサイトに公開する
+
+1. [render.com](https://dashboard.render.com) にログイン
+2. 画面右上の **「New +」** をクリック
+3. **「Static Site」** をクリック
+4. **「Connect a repository」** をクリック
+   - 初回はGitHubとの連携許可を求められます → **「Authorize Render」** をクリック
+5. 先ほど作った **`latest-news-app`** を探して **「Connect」** をクリック
+6. 以下の設定を確認（自動で入力されています）：
+
+| 項目 | 値 |
+|---|---|
+| **Name** | `latest-news-app`（好きな名前でOK） |
+| **Branch** | `main` |
+| **Build Command** | `npm install && npm run build` |
+| **Publish Directory** | `dist` |
+
+7. 一番下の **「Create Static Site」** ボタンをクリック
+8. 2〜3分待つとデプロイ完了！
+
+✅ 表示されたURL（例: `latest-news-app.onrender.com`）があなたのサイトです！
+
+---
+
+## 🎉 完成！
+
+おめでとうございます！あなたのサイトがインターネット上に公開されました。
+
+---
+
+## 📌 よくある質問
+
+### Q. もう一度デプロイするには？
+GitHubにファイルをプッシュするだけで**自動で再デプロイ**されます。
+
+```bash
+git add .
+git commit -m "変更内容の説明"
+git push
+```
+
+### Q. サイトのURLを変更したい
+Renderダッシュボード → 該当のサイト → 「Settings」→ 「Change name」で変更可能
+
+### Q. デプロイに失敗した
+- Renderのダッシュボードで「Logs」を確認
+- Build Commandが正しいか確認
+- `npm run build` がローカルで成功するか確認
+
+### Q. 無料プランの制限は？
+- 15分間アクセスがないとスリープする（初回アクセス時に30秒ほど待たされる）
+- 月100GBの帯域幅まで無料
+
+---
+
+## ✨ アプリの機能
+
+- 🔥 トップ / 💻 テクノロジー / 💼 ビジネス / 🎬 エンタメ / ⚽ スポーツ / 🔬 科学
+- 📝 要約表示 / 🌐 サイト内閲覧 / ↗ 元サイトリンク
+- 📱 スマホ対応 / 🖼️ サムネイル表示
+
+## 🔧 技術スタック
+
+React + TypeScript + Vite + Tailwind CSS + RSS API
+
+## 📡 データソース
+
+NHKニュース / Google News 日本語版 / ITmedia
