@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Story } from '../types';
-import { formatDate, fetchArticle, fetchSummary, AVAILABLE_MODELS, type ArticleData, type SummaryData } from '../api/rss';
+import { formatDate, fetchArticle, fetchSummary, fetchChatResponse, AVAILABLE_MODELS, type ArticleData, type SummaryData, type ChatMessage } from '../api/rss';
 
 interface NewsDetailProps {
   story: Story;
@@ -15,6 +15,11 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('openrouter/free');
+  
+  // チャット機能の状態
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     const loadArticle = async () => {
@@ -47,6 +52,15 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
       const data = await fetchSummary(content, title, selectedModel);
       setSummary(data);
       
+      // 要約後にチャットメッセージを初期化
+      const titleText = articleData?.title || story.title;
+      setChatMessages([
+        {
+          role: 'system',
+          content: `あなたはニュース記事のアシスタントです。以下の記事について質問に答えてください。\n\nタイトル: ${titleText}\n\n要約:\n${data.summary}\n\n記事内容:\n${(content || '').substring(0, 2000)}`
+        }
+      ]);
+      
       // 抽出型要約の場合、APIキーの確認を促す
       if (data.method === 'extractive') {
         console.warn('Using extractive summary. Please check if API keys are set correctly.');
@@ -57,6 +71,29 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
       alert(`要約の生成に失敗しました。\n\nエラー: ${errorMessage}\n\n以下の確認事項をチェックしてください：\n1. Render DashboardでAPIキーが設定されているか\n2. モデル名が正しいか確認（https://openrouter.ai/models）`);
     } finally {
       setSummaryLoading(false);
+    }
+  };
+
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+
+    const userMessage: ChatMessage = { role: 'user', content: chatInput.trim() };
+    const newMessages = [...chatMessages, userMessage];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const response = await fetchChatResponse(newMessages, selectedModel);
+      setChatMessages([...newMessages, { role: 'assistant', content: response }]);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setChatMessages([...newMessages, { 
+        role: 'assistant', 
+        content: '申し訳ありません。回答の生成に失敗しました。もう一度お試しください。' 
+      }]);
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -212,6 +249,80 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* チャット機能（要約後に表示） */}
+        {summary && showSummary && (
+          <div className="mx-6 mt-4 mb-6">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  💬 この記事について質問
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  要約内容や記事について質問できます
+                </p>
+              </div>
+              
+              {/* チャットメッセージ一覧 */}
+              <div className="max-h-80 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900/50">
+                {chatMessages.filter(m => m.role !== 'system').map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                        msg.role === 'user'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-2">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* チャット入力 */}
+              <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-800">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleChatSubmit();
+                      }
+                    }}
+                    placeholder="質問を入力してください..."
+                    disabled={chatLoading}
+                    className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleChatSubmit}
+                    disabled={chatLoading || !chatInput.trim()}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    送信
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
