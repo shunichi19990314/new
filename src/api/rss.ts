@@ -1,11 +1,13 @@
 import type { Story, Category } from '../types';
 
-// バックエンドAPIのURL
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+// バックエンドAPIのURL（末尾の/を削除）
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
 
 if (!API_BASE_URL) {
   console.error('❌ VITE_API_URL environment variable is not set!');
   console.error('Please set it in Render Dashboard -> Environment');
+} else {
+  console.log('✓ API Base URL:', API_BASE_URL);
 }
 
 export async function fetchStories(category: Category): Promise<Story[]> {
