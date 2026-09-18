@@ -5,9 +5,24 @@ interface HeaderProps {
   onCategoryChange: (cat: Category) => void;
   searchQuery?: string;
   onSearch?: (query: string) => void;
+  sortBy?: 'date' | 'relevance';
+  onSortChange?: (sort: 'date' | 'relevance') => void;
+  filterSource?: string;
+  onFilterChange?: (source: string) => void;
+  availableSources?: string[];
 }
 
-export default function Header({ category, onCategoryChange, searchQuery = '', onSearch }: HeaderProps) {
+export default function Header({ 
+  category, 
+  onCategoryChange, 
+  searchQuery = '', 
+  onSearch,
+  sortBy = 'date',
+  onSortChange,
+  filterSource = 'all',
+  onFilterChange,
+  availableSources = []
+}: HeaderProps) {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-4xl mx-auto px-4 py-4">
@@ -54,6 +69,43 @@ export default function Header({ category, onCategoryChange, searchQuery = '', o
                 </button>
               )}
             </div>
+            
+            {/* ソートとフィルタ */}
+            {(onSortChange || onFilterChange) && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {/* ソート */}
+                {onSortChange && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">並び替え:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => onSortChange(e.target.value as 'date' | 'relevance')}
+                      className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="date">日付順</option>
+                      <option value="relevance">関連度順</option>
+                    </select>
+                  </div>
+                )}
+                
+                {/* ソースフィルタ */}
+                {onFilterChange && availableSources.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">ソース:</span>
+                    <select
+                      value={filterSource}
+                      onChange={(e) => onFilterChange(e.target.value)}
+                      className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 max-w-[200px]"
+                    >
+                      <option value="all">すべて</option>
+                      {availableSources.map(source => (
+                        <option key={source} value={source}>{source}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

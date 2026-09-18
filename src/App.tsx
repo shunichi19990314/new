@@ -15,6 +15,8 @@ function App() {
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'relevance'>('date');
+  const [filterSource, setFilterSource] = useState<string>('all');
   const ITEMS_PER_PAGE = 15;
 
   const addDebugLog = (message: string) => {
@@ -70,27 +72,55 @@ function App() {
     setPage(0); // 検索時にページをリセット
   };
 
+  // 利用可能なソースを取得
+  const availableSources = Array.from(new Set(allStories.map(story => story.source))).sort();
+
   // 検索フィルタリング
   const filteredStories = searchQuery
-    ? allStories.filter(story =>
-        story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        story.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        story.source.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : allStories;
+    ? allStories.filter(story => {
+        const matchesQuery = 
+          story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          story.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          story.source.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesSource = filterSource === 'all' || story.source === filterSource;
+        
+        return matchesQuery && matchesSource;
+      })
+    : allStories.filter(story => filterSource === 'all' || story.source === filterSource);
+
+  // ソート機能
+  const sortedStories = [...filteredStories].sort((a, b) => {
+    if (sortBy === 'date') {
+      return b.publishedAt - a.publishedAt; // 日付順（新しい順）
+    } else {
+      // 関連度順（検索キーワードの一致度でソート）
+      if (!searchQuery) return b.publishedAt - a.publishedAt;
+      
+      const query = searchQuery.toLowerCase();
+      const scoreA = 
+        (a.title.toLowerCase().includes(query) ? 2 : 0) +
+        (a.description.toLowerCase().includes(query) ? 1 : 0);
+      const scoreB = 
+        (b.title.toLowerCase().includes(query) ? 2 : 0) +
+        (b.description.toLowerCase().includes(query) ? 1 : 0);
+      
+      return scoreB - scoreA;
+    }
+  });
 
   // 表示するストーリーを更新
   useEffect(() => {
     if (searchQuery) {
       // 検索中は全結果を表示（ページネーションなし）
-      setStories(filteredStories);
+      setStories(sortedStories);
     } else {
       // 通常時はページネーション
       const start = page * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE;
-      setStories(allStories.slice(start, end));
+      setStories(sortedStories.slice(start, end));
     }
-  }, [searchQuery, filteredStories, page, allStories]);
+  }, [searchQuery, sortedStories, page]);
 
   const handleNextPage = () => {
     const newPage = page + 1;
@@ -124,6 +154,11 @@ function App() {
         onCategoryChange={handleCategoryChange}
         searchQuery={searchQuery}
         onSearch={handleSearch}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        filterSource={filterSource}
+        onFilterChange={setFilterSource}
+        availableSources={availableSources}
       />
       <main className="max-w-4xl mx-auto px-4 py-6">
         {error && (
