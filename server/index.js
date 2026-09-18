@@ -59,7 +59,7 @@ app.get('/api/news/:category', async (req, res) => {
 
   try {
     const rssUrls = CATEGORIES[category];
-    const allItems: any[] = [];
+    const allItems = [];
 
     // 各RSSフィードを並列取得
     const results = await Promise.allSettled(
@@ -91,7 +91,7 @@ app.get('/api/news/:category', async (req, res) => {
     }
 
     // 重複を除去し、日付順にソート
-    const seen = new Set<string>();
+    const seen = new Set();
     const unique = allItems.filter(item => {
       if (!item.link || seen.has(item.link)) return false;
       seen.add(item.link);
