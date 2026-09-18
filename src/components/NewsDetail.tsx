@@ -45,10 +45,15 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
       const data = await fetchSummary(content, title);
       setSummary(data);
       setShowSummary(true);
+      
+      // 抽出型要約の場合、APIキーの確認を促す
+      if (data.method === 'extractive') {
+        console.warn('Using extractive summary. Please check if API keys are set correctly.');
+      }
     } catch (err) {
       console.error('Failed to generate summary:', err);
       const errorMessage = err instanceof Error ? err.message : '不明なエラー';
-      alert(`要約の生成に失敗しました。\n\nエラー: ${errorMessage}\n\nAPIキーが正しく設定されているか確認してください。`);
+      alert(`要約の生成に失敗しました。\n\nエラー: ${errorMessage}\n\n以下の確認事項をチェックしてください：\n1. Render DashboardでAPIキーが設定されているか\n2. /healthエンドポイントでAPIキーが認識されているか\n3. /api/test-geminiエンドポイントでテストが成功するか`);
     } finally {
       setSummaryLoading(false);
     }
@@ -134,6 +139,11 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">✨</span>
               <h3 className="font-bold text-purple-900 dark:text-purple-100">AI要約</h3>
+              {summary.method === 'openrouter' && (
+                <span className="text-xs px-2 py-0.5 bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full">
+                  OpenRouter
+                </span>
+              )}
               {summary.method === 'openai' && (
                 <span className="text-xs px-2 py-0.5 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full">
                   OpenAI
