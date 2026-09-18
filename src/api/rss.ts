@@ -95,13 +95,13 @@ export interface SummaryData {
   method: string;
 }
 
-// 利用可能なモデル一覧
+// 利用可能なモデル一覧（高速なモデルを優先）
 export const AVAILABLE_MODELS = [
   { id: 'openrouter/free', name: '自動ルーター（おすすめ）', description: '自動的に最適な無料モデルを選択' },
-  { id: 'nvidia/nemotron-3.5-lightning:free', name: 'NVIDIA Nemotron 3.5', description: '高速・高品質' },
-  { id: 'nvidia/nemotron-3-super-120b-a12b:free', name: 'NVIDIA Nemotron 3 Super', description: '高性能' },
+  { id: 'nvidia/nemotron-3.5-lightning:free', name: 'NVIDIA Nemotron 3.5', description: '超高速・高品質' },
+  { id: 'cohere/north-mini-code:free', name: 'Cohere North Mini', description: '高速・コンパクト' },
   { id: 'thinkingmachines/inkling-small:free', name: 'Inkling Small', description: '多言語対応' },
-  { id: 'cohere/north-mini-code:free', name: 'Cohere North Mini', description: 'コンパクト' },
+  { id: 'nvidia/nemotron-3-super-120b-a12b:free', name: 'NVIDIA Nemotron 3 Super', description: '高性能' },
   { id: 'poolside/laguna-s-2.1:free', name: 'Poolside Laguna S 2.1', description: 'コーディング特化' },
 ];
 
@@ -143,17 +143,17 @@ async function summarizeWithOpenRouterDirect(content: string, title: string, mod
             messages: [
               {
                 role: 'system',
-                content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。'
+                content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。簡潔に答えてください。'
               },
               {
                 role: 'user',
-                content: `タイトル: ${title}\n\n記事内容:\n${content.substring(0, 3000)}\n\n要約:`
+                content: `タイトル: ${title}\n\n記事内容:\n${content.substring(0, 2000)}\n\n要約:`
               }
             ],
-            max_tokens: 500,
-            temperature: 0.7,
+            max_tokens: 400,
+            temperature: 0.5,
           }),
-          signal: AbortSignal.timeout(60000)
+          signal: AbortSignal.timeout(30000) // 30秒タイムアウトに短縮
         });
 
         if (!response.ok) {
@@ -283,6 +283,64 @@ export async function fetchSummary(content: string, title: string, modelId?: str
 
   // 4. 全て失敗した場合
   throw new Error('要約の生成に失敗しました。APIキーが設定されているか確認してください。');
+}
+
+// チャットメッセージ型
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+// チャットAPI（質問機能）
+export async function fetchChatResponse(
+  messages: ChatMessage[],
+  modelId: string = 'openrouter/free'
+): Promise<string> {
+  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('VITE_OPENROUTER_API_KEY not set');
+  }
+
+  console.log('Sending chat message...');
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Latest News App',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: messages,
+        max_tokens: 1000,
+        temperature: 0.7,
+      }),
+      signal: AbortSignal.timeout(60000)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Chat API error:', errorData);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content;
+    
+    if (reply) {
+      console.log('✓ Chat response received');
+      return reply.trim();
+    }
+    
+    throw new Error('No response from API');
+  } catch (error) {
+    console.error('Chat API error:', error);
+    throw error;
+  }
 }
 
 export function formatDate(timestamp: number): string {
