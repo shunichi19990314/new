@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Story } from '../types';
-import { formatDate, fetchArticle, type ArticleData } from '../api/rss';
+import { formatDate, fetchArticle, fetchSummary, type ArticleData, type SummaryData } from '../api/rss';
 
 interface NewsDetailProps {
   story: Story;
@@ -11,6 +11,9 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
   const [articleData, setArticleData] = useState<ArticleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
     const loadArticle = async () => {
@@ -28,6 +31,27 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
     };
     loadArticle();
   }, [story.url]);
+
+  const handleSummarize = async () => {
+    if (summary) {
+      setShowSummary(!showSummary);
+      return;
+    }
+
+    setSummaryLoading(true);
+    try {
+      const content = articleData?.content || story.content || story.description;
+      const title = articleData?.title || story.title;
+      const data = await fetchSummary(content, title);
+      setSummary(data);
+      setShowSummary(true);
+    } catch (err) {
+      console.error('Failed to generate summary:', err);
+      alert('要約の生成に失敗しました。しばらくしてからもう一度お試しください。');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   let domain = '';
   try {
@@ -75,7 +99,56 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
               {articleData?.description || story.description}
             </p>
           )}
+
+          {/* 要約ボタン */}
+          <div className="mt-4">
+            <button
+              onClick={handleSummarize}
+              disabled={summaryLoading || loading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              {summaryLoading ? (
+                <>
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>要約を生成中...</span>
+                </>
+              ) : summary ? (
+                <>
+                  <span>{showSummary ? '🔼' : '🔽'}</span>
+                  <span>要約を{showSummary ? '隠す' : '表示'}</span>
+                </>
+              ) : (
+                <>
+                  <span>✨</span>
+                  <span>AI要約を生成</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* 要約表示エリア */}
+        {showSummary && summary && (
+          <div className="mx-6 mt-4 p-5 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">✨</span>
+              <h3 className="font-bold text-purple-900 dark:text-purple-100">AI要約</h3>
+              {summary.method === 'ai' && (
+                <span className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full">
+                  Gemini
+                </span>
+              )}
+              {summary.method === 'extractive' && (
+                <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                  抽出
+                </span>
+              )}
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              {summary.summary}
+            </p>
+          </div>
+        )}
 
         {/* 画像 */}
         {displayImage && (

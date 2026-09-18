@@ -90,6 +90,42 @@ export async function fetchArticle(url: string): Promise<ArticleData> {
   }
 }
 
+export interface SummaryData {
+  summary: string;
+  method: string;
+}
+
+export async function fetchSummary(content: string, title: string): Promise<SummaryData> {
+  if (!API_BASE_URL) {
+    throw new Error('API URL is not configured.');
+  }
+
+  console.log('Generating summary...');
+
+  try {
+    const params = new URLSearchParams({
+      content,
+      title,
+    });
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/summarize?${params.toString()}`,
+      { signal: AbortSignal.timeout(30000) }
+    );
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✓ Summary generated successfully');
+    return data;
+  } catch (error) {
+    console.error('Failed to generate summary:', error);
+    throw error;
+  }
+}
+
 export function formatDate(timestamp: number): string {
   const date = new Date(timestamp);
   const now = new Date();
