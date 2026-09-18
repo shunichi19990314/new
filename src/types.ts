@@ -28,6 +28,7 @@ export const CATEGORIES: CategoryInfo[] = [
     rssUrls: [
       'https://www3.nhk.or.jp/rss/news/cat0.xml',
       'https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja',
+      'https://feeds.asahi.com/rss/asahi/newsheadlines.xml',
     ],
   },
   {
@@ -35,8 +36,9 @@ export const CATEGORIES: CategoryInfo[] = [
     label: 'テクノロジー',
     icon: '💻',
     rssUrls: [
-      'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja',
       'https://rss.itmedia.co.jp/rss/2.0/topstory.xml',
+      'https://gigazine.net/news/rss_atom10/',
+      'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja',
     ],
   },
   {
@@ -45,6 +47,7 @@ export const CATEGORIES: CategoryInfo[] = [
     icon: '💼',
     rssUrls: [
       'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja',
+      'https://toyokeizai.net/list/rss/newlist',
     ],
   },
   {
@@ -53,6 +56,7 @@ export const CATEGORIES: CategoryInfo[] = [
     icon: '🎬',
     rssUrls: [
       'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja',
+      'https://www.oricon.co.jp/special/rss/oricon.xml',
     ],
   },
   {
@@ -61,6 +65,7 @@ export const CATEGORIES: CategoryInfo[] = [
     icon: '⚽',
     rssUrls: [
       'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja',
+      'https://www.nikkansports.com/rss/index.xml',
     ],
   },
   {
@@ -69,6 +74,7 @@ export const CATEGORIES: CategoryInfo[] = [
     icon: '🔬',
     rssUrls: [
       'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp0Y1RjU0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja',
+      'https://r.nikkei.com/rss/science.xml',
     ],
   },
 ];

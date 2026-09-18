@@ -1,4 +1,16 @@
 services:
+  # バックエンドAPI
+  - type: web
+    name: news-api
+    runtime: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    plan: free
+  
+  # フロントエンド（静的サイト）
   - type: web
     name: latest-news-app
     runtime: static
