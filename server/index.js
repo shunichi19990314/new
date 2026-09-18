@@ -174,11 +174,12 @@ app.get('/api/test-openrouter', async (req, res) => {
 
     const prompt = '「こんにちは」と言ってください。';
     
-    // 複数のモデルを試す
+    // 2026年9月現在の最新の無料モデル
     const models = [
-      'google/gemini-2.0-flash-exp:free',
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'mistralai/mistral-7b-instruct:free'
+      'openrouter/free', // 自動ルーター
+      'nvidia/nemotron-3.5-lightning:free',
+      'nvidia/nemotron-3-super-120b-a12b:free',
+      'thinkingmachines/inkling-small:free',
     ];
     
     let lastError = null;
@@ -581,11 +582,12 @@ async function summarizeWithOpenRouter(text, title) {
       },
     });
 
-    // 複数の無料モデルを試す
+    // 2026年9月現在の最新の無料モデル
     const models = [
-      'google/gemini-2.0-flash-exp:free',
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'mistralai/mistral-7b-instruct:free'
+      'openrouter/free', // 自動ルーター
+      'nvidia/nemotron-3.5-lightning:free',
+      'nvidia/nemotron-3-super-120b-a12b:free',
+      'thinkingmachines/inkling-small:free',
     ];
     
     let lastError = null;

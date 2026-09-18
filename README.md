@@ -184,7 +184,7 @@ NHKニュース / Google News 日本語版 / ITmedia
 1. **OpenRouter (Direct)**（🌟 最も推奨・フロントエンドから直接呼び出し・無料モデル利用可能）
    - [OpenRouter](https://openrouter.ai/)でAPIキーを取得
    - 環境変数: `VITE_OPENROUTER_API_KEY`（フロントエンド）
-   - モデル: Gemini Flash、Llama 3、Mistral（全て無料）
+   - モデル: `openrouter/free`（自動ルーター）、NVIDIA Nemotron、Inkling Smallなど（全て無料）
    - **特徴**: 500以上のAIモデルに統一APIでアクセス、Renderの制限なし
 
 2. **Gemini (Direct)**（フォールバック・フロントエンドから直接呼び出し）
@@ -264,15 +264,17 @@ OpenRouterは500以上のAIモデルに統一APIでアクセスできるサー�
 
 #### 利用可能なモデル（自動フォールバック）
 
-アプリは以下の無料モデルを自動的に試します：
+アプリは以下の無料モデルを自動的に試します（2026年9月現在）：
 
-1. `google/gemini-2.0-flash-exp:free` - Gemini Flash（無料）
-2. `meta-llama/llama-3.1-8b-instruct:free` - Llama 3（無料）
-3. `mistralai/mistral-7b-instruct:free` - Mistral（無料）
+1. `openrouter/free` - 自動ルーター（最も簡単、自動的に最適な無料モデルを選択）
+2. `nvidia/nemotron-3.5-lightning:free` - NVIDIA Nemotron 3.5 Lightning
+3. `nvidia/nemotron-3-super-120b-a12b:free` - NVIDIA Nemotron 3 Super
+4. `thinkingmachines/inkling-small:free` - Thinking Machines Inkling Small
+5. `cohere/north-mini-code:free` - Cohere North Mini Code
 
 有料モデルも利用可能：
 - `openai/gpt-4o` - GPT-4o
-- `anthropic/claude-3.5-sonnet` - Claude 3.5
+- `anthropic/claude-3.5-sonnet` - Claude 3.5 Sonnet
 
 完全なリストは https://openrouter.ai/models を参照してください。
 

@@ -107,11 +107,13 @@ async function summarizeWithOpenRouterDirect(content: string, title: string): Pr
   try {
     console.log('Calling OpenRouter API directly from frontend...');
     
-    // 複数の無料モデルを試す
+    // 2026年9月現在の最新の無料モデル
     const models = [
-      'google/gemini-2.0-flash-exp:free',
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'mistralai/mistral-7b-instruct:free'
+      'openrouter/free', // 自動ルーター（最も簡単）
+      'nvidia/nemotron-3.5-lightning:free',
+      'nvidia/nemotron-3-super-120b-a12b:free',
+      'thinkingmachines/inkling-small:free',
+      'cohere/north-mini-code:free',
     ];
     
     for (const model of models) {
