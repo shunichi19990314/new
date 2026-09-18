@@ -14,6 +14,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const ITEMS_PER_PAGE = 15;
 
   const addDebugLog = (message: string) => {
@@ -61,13 +62,38 @@ function App() {
   const handleCategoryChange = (cat: Category) => {
     setCategory(cat);
     setSelectedStory(null);
+    setSearchQuery(''); // カテゴリ変更時に検索をクリア
   };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(0); // 検索時にページをリセット
+  };
+
+  // 検索フィルタリング
+  const filteredStories = searchQuery
+    ? allStories.filter(story =>
+        story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        story.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        story.source.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allStories;
+
+  // 表示するストーリーを更新
+  useEffect(() => {
+    if (searchQuery) {
+      // 検索中は全結果を表示（ページネーションなし）
+      setStories(filteredStories);
+    } else {
+      // 通常時はページネーション
+      const start = page * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      setStories(allStories.slice(start, end));
+    }
+  }, [searchQuery, filteredStories, page, allStories]);
 
   const handleNextPage = () => {
     const newPage = page + 1;
-    const start = newPage * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    setStories(allStories.slice(start, end));
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -75,9 +101,6 @@ function App() {
   const handlePrevPage = () => {
     if (page > 0) {
       const newPage = page - 1;
-      const start = newPage * ITEMS_PER_PAGE;
-      const end = start + ITEMS_PER_PAGE;
-      setStories(allStories.slice(start, end));
       setPage(newPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -96,7 +119,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header category={category} onCategoryChange={handleCategoryChange} />
+      <Header 
+        category={category} 
+        onCategoryChange={handleCategoryChange}
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
+      />
       <main className="max-w-4xl mx-auto px-4 py-6">
         {error && (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
@@ -139,13 +167,39 @@ function App() {
           </div>
         )}
         
+        {/* 検索結果の表示 */}
+        {searchQuery && !loading && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              🔍 「<span className="font-bold">{searchQuery}</span>」の検索結果: {filteredStories.length}件
+            </p>
+          </div>
+        )}
+
         <NewsList
           stories={stories}
           loading={loading}
           onSelect={setSelectedStory}
         />
         
-        {!loading && allStories.length > 0 && (
+        {/* 検索結果が0件の場合 */}
+        {searchQuery && !loading && filteredStories.length === 0 && (
+          <div className="text-center py-12">
+            <span className="text-4xl">🔍</span>
+            <p className="mt-4 text-gray-500 dark:text-gray-400">
+              「{searchQuery}」に一致するニュースが見つかりませんでした
+            </p>
+            <button
+              onClick={() => handleSearch('')}
+              className="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              検索をクリア
+            </button>
+          </div>
+        )}
+        
+        {/* ページネーション（検索中は非表示） */}
+        {!loading && allStories.length > 0 && !searchQuery && (
           <div className="flex justify-center items-center gap-4 mt-8 mb-6">
             <button
               onClick={handlePrevPage}
