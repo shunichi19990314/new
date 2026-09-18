@@ -95,8 +95,18 @@ export interface SummaryData {
   method: string;
 }
 
+// 利用可能なモデル一覧
+export const AVAILABLE_MODELS = [
+  { id: 'openrouter/free', name: '自動ルーター（おすすめ）', description: '自動的に最適な無料モデルを選択' },
+  { id: 'nvidia/nemotron-3.5-lightning:free', name: 'NVIDIA Nemotron 3.5', description: '高速・高品質' },
+  { id: 'nvidia/nemotron-3-super-120b-a12b:free', name: 'NVIDIA Nemotron 3 Super', description: '高性能' },
+  { id: 'thinkingmachines/inkling-small:free', name: 'Inkling Small', description: '多言語対応' },
+  { id: 'cohere/north-mini-code:free', name: 'Cohere North Mini', description: 'コンパクト' },
+  { id: 'poolside/laguna-s-2.1:free', name: 'Poolside Laguna S 2.1', description: 'コーディング特化' },
+];
+
 // OpenRouter APIをフロントエンドから直接呼び出す
-async function summarizeWithOpenRouterDirect(content: string, title: string): Promise<string | null> {
+async function summarizeWithOpenRouterDirect(content: string, title: string, modelId?: string): Promise<string | null> {
   const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
   
   if (!apiKey) {
@@ -107,14 +117,14 @@ async function summarizeWithOpenRouterDirect(content: string, title: string): Pr
   try {
     console.log('Calling OpenRouter API directly from frontend...');
     
-    // 2026年9月現在の最新の無料モデル
-    const models = [
-      'openrouter/free', // 自動ルーター（最も簡単）
-      'nvidia/nemotron-3.5-lightning:free',
-      'nvidia/nemotron-3-super-120b-a12b:free',
-      'thinkingmachines/inkling-small:free',
-      'cohere/north-mini-code:free',
-    ];
+    // 環境変数で指定されたモデル、または引数で指定されたモデル、またはデフォルト
+    const envModel = import.meta.env.VITE_OPENROUTER_MODEL;
+    const defaultModel = envModel || 'openrouter/free';
+    
+    // 指定されたモデルを最初に試し、失敗したらフォールバック
+    const models = modelId 
+      ? [modelId, ...AVAILABLE_MODELS.map(m => m.id).filter(id => id !== modelId)]
+      : [defaultModel, ...AVAILABLE_MODELS.map(m => m.id).filter(id => id !== defaultModel)];
     
     for (const model of models) {
       try {
@@ -227,11 +237,11 @@ async function summarizeWithGeminiDirect(content: string, title: string): Promis
   }
 }
 
-export async function fetchSummary(content: string, title: string): Promise<SummaryData> {
+export async function fetchSummary(content: string, title: string, modelId?: string): Promise<SummaryData> {
   console.log('Generating summary...');
 
   // 1. まずOpenRouter APIをフロントエンドから直接試す
-  const openRouterSummary = await summarizeWithOpenRouterDirect(content, title);
+  const openRouterSummary = await summarizeWithOpenRouterDirect(content, title, modelId);
   if (openRouterSummary) {
     return {
       summary: openRouterSummary,

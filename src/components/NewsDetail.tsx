@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Story } from '../types';
-import { formatDate, fetchArticle, fetchSummary, type ArticleData, type SummaryData } from '../api/rss';
+import { formatDate, fetchArticle, fetchSummary, AVAILABLE_MODELS, type ArticleData, type SummaryData } from '../api/rss';
 
 interface NewsDetailProps {
   story: Story;
@@ -14,6 +14,7 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('openrouter/free');
 
   useEffect(() => {
     const loadArticle = async () => {
@@ -33,18 +34,18 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
   }, [story.url]);
 
   const handleSummarize = async () => {
-    if (summary) {
+    if (summary && !summaryLoading) {
       setShowSummary(!showSummary);
       return;
     }
 
     setSummaryLoading(true);
+    setShowSummary(true);
     try {
       const content = articleData?.content || story.content || story.description;
       const title = articleData?.title || story.title;
-      const data = await fetchSummary(content, title);
+      const data = await fetchSummary(content, title, selectedModel);
       setSummary(data);
-      setShowSummary(true);
       
       // 抽出型要約の場合、APIキーの確認を促す
       if (data.method === 'extractive') {
@@ -53,7 +54,7 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
     } catch (err) {
       console.error('Failed to generate summary:', err);
       const errorMessage = err instanceof Error ? err.message : '不明なエラー';
-      alert(`要約の生成に失敗しました。\n\nエラー: ${errorMessage}\n\n以下の確認事項をチェックしてください：\n1. Render DashboardでAPIキーが設定されているか\n2. /healthエンドポイントでAPIキーが認識されているか\n3. /api/test-geminiエンドポイントでテストが成功するか`);
+      alert(`要約の生成に失敗しました。\n\nエラー: ${errorMessage}\n\n以下の確認事項をチェックしてください：\n1. Render DashboardでAPIキーが設定されているか\n2. モデル名が正しいか確認（https://openrouter.ai/models）`);
     } finally {
       setSummaryLoading(false);
     }
@@ -106,8 +107,33 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
             </p>
           )}
 
-          {/* 要約ボタン */}
-          <div className="mt-4">
+          {/* モデル選択と要約ボタン */}
+          <div className="mt-4 space-y-3">
+            {/* モデル選択ドロップダウン */}
+            <div className="flex items-center gap-3">
+              <label htmlFor="model-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                🤖 モデル:
+              </label>
+              <select
+                id="model-select"
+                value={selectedModel}
+                onChange={(e) => {
+                  setSelectedModel(e.target.value);
+                  // モデルを変更したら要約をリセット
+                  setSummary(null);
+                  setShowSummary(false);
+                }}
+                className="flex-1 max-w-xs px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                {AVAILABLE_MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* 要約ボタン */}
             <button
               onClick={handleSummarize}
               disabled={summaryLoading || loading}
@@ -120,8 +146,8 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
                 </>
               ) : summary ? (
                 <>
-                  <span>{showSummary ? '🔼' : '🔽'}</span>
-                  <span>要約を{showSummary ? '隠す' : '表示'}</span>
+                  <span>🔄</span>
+                  <span>別のモデルで再生成</span>
                 </>
               ) : (
                 <>
