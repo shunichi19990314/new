@@ -139,6 +139,11 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">✨</span>
               <h3 className="font-bold text-purple-900 dark:text-purple-100">AI要約</h3>
+              {summary.method === 'openrouter' && (
+                <span className="text-xs px-2 py-0.5 bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full">
+                  OpenRouter
+                </span>
+              )}
               {summary.method === 'openai' && (
                 <span className="text-xs px-2 py-0.5 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full">
                   OpenAI

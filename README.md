@@ -181,17 +181,23 @@ NHKニュース / Google News 日本語版 / ITmedia
 
 ### 対応API（優先順位順）
 
-1. **OpenAI API**（推奨・日本からアクセス可能）
+1. **OpenRouter API**（🌟 最も推奨・地域制限なし・無料モデル利用可能）
+   - [OpenRouter](https://openrouter.ai/)でAPIキーを取得
+   - 環境変数: `OPENROUTER_API_KEY`
+   - モデル: Gemini Flash（無料）など多数
+   - **特徴**: 500以上のAIモデルに統一APIでアクセス可能
+
+2. **OpenAI API**（日本からアクセス可能）
    - [OpenAI Platform](https://platform.openai.com/api-keys)でAPIキーを取得
    - 環境変数: `OPENAI_API_KEY`
    - モデル: GPT-3.5 Turbo
 
-2. **Anthropic Claude API**（日本からアクセス可能）
+3. **Anthropic Claude API**（日本からアクセス可能）
    - [Anthropic Console](https://console.anthropic.com/)でAPIキーを取得
    - 環境変数: `ANTHROPIC_API_KEY`
    - モデル: Claude 3 Haiku
 
-3. **Google Gemini API**（⚠️ 地域制限あり）
+4. **Google Gemini API**（⚠️ 地域制限あり）
    - [Google AI Studio](https://aistudio.google.com/apikey)でAPIキーを取得
    - 環境変数: `GEMINI_API_KEY`
    - モデル: Gemini 1.5 Flash
@@ -205,12 +211,62 @@ NHKニュース / Google News 日本語版 / ITmedia
 
 | API | Key | Value |
 |-----|-----|-------|
+| OpenRouter | `OPENROUTER_API_KEY` | `sk-or-...` |
 | OpenAI | `OPENAI_API_KEY` | `sk-...` |
 | Claude | `ANTHROPIC_API_KEY` | `sk-ant-...` |
 | Gemini | `GEMINI_API_KEY` | `AI...` |
 
 4. 「Save Changes」をクリック
 5. バックエンドAPIを再デプロイ（「Manual Deploy」→「Deploy latest commit」）
+
+### OpenRouter APIの設定方法（推奨）
+
+OpenRouterは500以上のAIモデルに統一APIでアクセスできるサービスです。無料モデルも利用可能です。
+
+#### 1. APIキーの取得
+
+1. [OpenRouter](https://openrouter.ai/)にアクセス
+2. 「Sign In」→ Googleアカウントでログイン
+3. 右上のアイコン → 「Keys」をクリック
+4. 「Create Key」をクリック
+5. APIキーをコピー（`sk-or-...`で始まる）
+
+#### 2. Renderでの設定
+
+1. Render Dashboardで`news-api`サービスの「Environment」を開く
+2. 「Add Environment Variable」をクリック
+3. 以下を入力：
+   - **Key**: `OPENROUTER_API_KEY`
+   - **Value**: コピーしたAPIキー
+4. 「Save Changes」をクリック
+5. バックエンドAPIを再デプロイ
+
+#### 3. 動作確認
+
+ブラウザで以下にアクセス：
+```
+https://あなたのAPIのURL/api/test-openrouter
+```
+
+成功した場合：
+```json
+{
+  "status": "ok",
+  "message": "OpenRouter API is working correctly",
+  "response": "こんにちは！",
+  "model": "google/gemini-2.0-flash-exp:free"
+}
+```
+
+#### 利用可能なモデル（一部）
+
+- `google/gemini-2.0-flash-exp:free` - Gemini Flash（無料）
+- `meta-llama/llama-3.1-8b-instruct:free` - Llama 3（無料）
+- `mistralai/mistral-7b-instruct:free` - Mistral（無料）
+- `openai/gpt-4o` - GPT-4o（有料）
+- `anthropic/claude-3.5-sonnet` - Claude 3.5（有料）
+
+完全なリストは https://openrouter.ai/models を参照してください。
 
 ### APIキー未設定の場合
 

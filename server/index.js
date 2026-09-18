@@ -134,12 +134,77 @@ app.get('/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     apiKeys: {
+      openrouter: !!process.env.OPENROUTER_API_KEY,
+      openrouterKeyPrefix: process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.substring(0, 10) + '...' : null,
       openai: !!process.env.OPENAI_API_KEY,
       anthropic: !!process.env.ANTHROPIC_API_KEY,
       gemini: !!process.env.GEMINI_API_KEY,
       geminiKeyPrefix: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 10) + '...' : null,
     }
   });
+});
+
+// OpenRouter APIテストエンドポイント
+app.get('/api/test-openrouter', async (req, res) => {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    return res.status(400).json({ 
+      error: 'OPENROUTER_API_KEY is not set',
+      message: 'Please set OPENROUTER_API_KEY in Render Dashboard -> Environment'
+    });
+  }
+
+  try {
+    console.log('=== Testing OpenRouter API ===');
+    console.log('API Key prefix:', apiKey.substring(0, 10) + '...');
+    
+    const { OpenAI } = await import('openai');
+    
+    const openai = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: apiKey,
+      defaultHeaders: {
+        'HTTP-Referer': 'https://latest-news-app.onrender.com',
+        'X-OpenRouter-Title': 'Latest News App',
+      },
+    });
+
+    const prompt = '「こんにちは」と言ってください。';
+    
+    console.log('Sending test request to OpenRouter API...');
+    const response = await openai.chat.completions.create({
+      model: 'google/gemini-2.0-flash-exp:free',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 100,
+    });
+    
+    const text = response.choices[0].message.content;
+    console.log('✓ OpenRouter API test succeeded');
+    
+    res.json({
+      status: 'ok',
+      message: 'OpenRouter API is working correctly',
+      response: text,
+      model: 'google/gemini-2.0-flash-exp:free',
+      apiKeyPrefix: apiKey.substring(0, 10) + '...'
+    });
+  } catch (error) {
+    console.error('✗ OpenRouter API test failed:', error.message);
+    console.error('Error details:', error);
+    
+    res.status(500).json({
+      status: 'error',
+      message: 'OpenRouter API test failed',
+      error: error.message,
+      apiKeyPrefix: apiKey.substring(0, 10) + '...'
+    });
+  }
 });
 
 // Gemini APIテストエンドポイント
@@ -462,6 +527,53 @@ async function summarizeWithOpenAI(text, title) {
   }
 }
 
+// OpenRouter APIを使った要約関数
+async function summarizeWithOpenRouter(text, title) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    console.log('OPENROUTER_API_KEY not set');
+    return null;
+  }
+
+  try {
+    const { OpenAI } = await import('openai');
+    
+    // OpenRouterはOpenAI SDKと互換性がある
+    const openai = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: apiKey,
+      defaultHeaders: {
+        'HTTP-Referer': 'https://latest-news-app.onrender.com', // 任意
+        'X-OpenRouter-Title': 'Latest News App', // 任意
+      },
+    });
+
+    // 無料モデルを使用（例: google/gemini-flash-1.5）
+    // 利用可能なモデル: https://openrouter.ai/models
+    const response = await openai.chat.completions.create({
+      model: 'google/gemini-2.0-flash-exp:free', // 無料のGeminiモデル
+      messages: [
+        {
+          role: 'system',
+          content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。'
+        },
+        {
+          role: 'user',
+          content: `タイトル: ${title}\n\n記事内容:\n${text.substring(0, 3000)}\n\n要約:`
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    return response.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('OpenRouter API error:', error.message);
+    return null;
+  }
+}
+
 // Anthropic Claude APIを使った要約関数
 async function summarizeWithClaude(text, title) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -546,6 +658,7 @@ app.get('/api/summarize', async (req, res) => {
   try {
     console.log('=== Generating summary ===');
     console.log('Available API keys:');
+    console.log('- OPENROUTER_API_KEY:', process.env.OPENROUTER_API_KEY ? '✓' : '✗');
     console.log('- OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '✓' : '✗');
     console.log('- ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? '✓' : '✗');
     console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✓' : '✗');
@@ -553,8 +666,18 @@ app.get('/api/summarize', async (req, res) => {
     let summary = null;
     let method = 'extractive';
     
-    // 1. OpenAI APIを試す（日本からアクセス可能）
-    if (process.env.OPENAI_API_KEY) {
+    // 1. OpenRouter APIを試す（推奨・地域制限なし）
+    if (process.env.OPENROUTER_API_KEY) {
+      console.log('Trying OpenRouter API...');
+      summary = await summarizeWithOpenRouter(content, title || '');
+      if (summary) {
+        method = 'openrouter';
+        console.log('✓ OpenRouter API succeeded');
+      }
+    }
+    
+    // 2. OpenAI APIを試す
+    if (!summary && process.env.OPENAI_API_KEY) {
       console.log('Trying OpenAI API...');
       summary = await summarizeWithOpenAI(content, title || '');
       if (summary) {
@@ -563,7 +686,7 @@ app.get('/api/summarize', async (req, res) => {
       }
     }
     
-    // 2. Anthropic Claude APIを試す（日本からアクセス可能）
+    // 3. Anthropic Claude APIを試す
     if (!summary && process.env.ANTHROPIC_API_KEY) {
       console.log('Trying Anthropic Claude API...');
       summary = await summarizeWithClaude(content, title || '');
@@ -573,7 +696,7 @@ app.get('/api/summarize', async (req, res) => {
       }
     }
     
-    // 3. Gemini APIを試す（地域制限あり）
+    // 4. Gemini APIを試す
     if (!summary && process.env.GEMINI_API_KEY) {
       console.log('Trying Gemini API...');
       summary = await summarizeWithGemini(content, title || '');
@@ -583,7 +706,7 @@ app.get('/api/summarize', async (req, res) => {
       }
     }
     
-    // 4. 全てのAPIが失敗した場合は抽出型要約
+    // 5. 全てのAPIが失敗した場合は抽出型要約
     if (!summary) {
       console.log('Using extractive summary (fallback)');
       summary = extractiveSummary(content, 5);
