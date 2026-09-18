@@ -215,3 +215,61 @@ NHKニュース / Google News 日本語版 / ITmedia
 ### APIキー未設定の場合
 
 記事の重要な部分を抽出する「抽出型要約」が自動的に使用されます。
+
+### 🔍 Gemini APIのトラブルシューティング
+
+**重要**: 日本はGemini APIの利用可能な地域に含まれています！
+
+#### 1. APIキーが正しく設定されているか確認
+
+ブラウザで以下にアクセス：
+```
+https://あなたのAPIのURL/health
+```
+
+以下のように表示されればOK：
+```json
+{
+  "status": "ok",
+  "apiKeys": {
+    "gemini": true,
+    "geminiKeyPrefix": "AQ.Ab8RN6L..."
+  }
+}
+```
+
+#### 2. Gemini APIが動作するかテスト
+
+ブラウザで以下にアクセス：
+```
+https://あなたのAPIのURL/api/test-gemini
+```
+
+成功した場合：
+```json
+{
+  "status": "ok",
+  "message": "Gemini API is working correctly",
+  "response": "こんにちは"
+}
+```
+
+失敗した場合、エラーメッセージを確認してください。
+
+#### 3. よくある問題
+
+**「GEMINI_API_KEY is not set」エラー**
+- Render Dashboardで環境変数名が`GEMINI_API_KEY`（大文字・アンダースコア）になっているか確認
+- 値にスペースや改行が含まれていないか確認
+
+**「401 Unauthorized」エラー**
+- APIキーが無効または期限切れの可能性があります
+- [Google AI Studio](https://aistudio.google.com/apikey)で新しいAPIキーを生成してください
+
+**「403 Forbidden」エラー**
+- APIキーにGemini APIのアクセス権限がない可能性があります
+- Google Cloud ConsoleでGemini APIが有効になっているか確認
+
+**「429 Too Many Requests」エラー**
+- 無料プランのレート制限に達しています
+- しばらく待ってから再試行してください

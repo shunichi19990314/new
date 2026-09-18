@@ -137,8 +137,57 @@ app.get('/health', (req, res) => {
       openai: !!process.env.OPENAI_API_KEY,
       anthropic: !!process.env.ANTHROPIC_API_KEY,
       gemini: !!process.env.GEMINI_API_KEY,
+      geminiKeyPrefix: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.substring(0, 10) + '...' : null,
     }
   });
+});
+
+// Gemini APIテストエンドポイント
+app.get('/api/test-gemini', async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    return res.status(400).json({ 
+      error: 'GEMINI_API_KEY is not set',
+      message: 'Please set GEMINI_API_KEY in Render Dashboard -> Environment'
+    });
+  }
+
+  try {
+    console.log('=== Testing Gemini API ===');
+    console.log('API Key prefix:', apiKey.substring(0, 10) + '...');
+    
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = '「こんにちは」と言ってください。';
+    
+    console.log('Sending test request to Gemini API...');
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log('✓ Gemini API test succeeded');
+    
+    res.json({
+      status: 'ok',
+      message: 'Gemini API is working correctly',
+      response: text,
+      apiKeyPrefix: apiKey.substring(0, 10) + '...'
+    });
+  } catch (error) {
+    console.error('✗ Gemini API test failed:', error.message);
+    console.error('Error details:', error);
+    
+    res.status(500).json({
+      status: 'error',
+      message: 'Gemini API test failed',
+      error: error.message,
+      statusCode: error.status || null,
+      apiKeyPrefix: apiKey.substring(0, 10) + '...'
+    });
+  }
 });
 
 // ニュース取得API
@@ -454,6 +503,9 @@ async function summarizeWithGemini(text, title) {
   }
 
   try {
+    console.log('Initializing Gemini API...');
+    console.log('API Key prefix:', apiKey.substring(0, 10) + '...');
+    
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -467,11 +519,18 @@ ${text.substring(0, 3000)}
 
 要約:`;
 
+    console.log('Sending request to Gemini API...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text();
+    const summaryText = response.text();
+    console.log('✓ Gemini API succeeded, summary length:', summaryText.length);
+    return summaryText;
   } catch (error) {
-    console.error('Gemini API error:', error.message);
+    console.error('✗ Gemini API error:', error.message);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    if (error.status) {
+      console.error('HTTP Status:', error.status);
+    }
     return null;
   }
 }
