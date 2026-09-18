@@ -111,7 +111,6 @@ const CATEGORIES = {
     'https://news.yahoo.co.jp/rss/topics/domestic.xml',
     'https://www.asahi.com/rss/index.html',
     'https://mainichi.jp/rss/etc/mainichi-top.rss',
-    'https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja',
   ],
   tech: [
     'https://rss.itmedia.co.jp/rss/2.0/topstory.xml',
