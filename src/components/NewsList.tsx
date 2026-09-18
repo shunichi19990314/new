@@ -64,7 +64,11 @@ interface NewsCardProps {
 function NewsCard({ story, index, onClick }: NewsCardProps) {
   let domain = '';
   try {
-    domain = new URL(story.url).hostname.replace('www.', '');
+    if (story.url) {
+      domain = new URL(story.url).hostname.replace('www.', '');
+    } else {
+      domain = story.source;
+    }
   } catch {
     domain = story.source;
   }

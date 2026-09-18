@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import NewsList from './components/NewsList';
 import NewsDetail from './components/NewsDetail';
 import Header from './components/Header';
@@ -65,6 +65,9 @@ function App() {
     setCategory(cat);
     setSelectedStory(null);
     setSearchQuery(''); // カテゴリ変更時に検索をクリア
+    setFilterSource('all'); // フィルタをリセット
+    setSortBy('date'); // ソートをリセット
+    setPage(0); // ページをリセット
   };
 
   const handleSearch = (query: string) => {
@@ -72,43 +75,54 @@ function App() {
     setPage(0); // 検索時にページをリセット
   };
 
-  // 利用可能なソースを取得
-  const availableSources = Array.from(new Set(allStories.map(story => story.source))).sort();
+  // ソート・フィルタ変更時にページをリセット
+  useEffect(() => {
+    setPage(0);
+  }, [sortBy, filterSource]);
 
+  // 利用可能なソースを取得
+  const availableSources = useMemo(
+    () => Array.from(new Set(allStories.map(story => story.source))).sort(),
+    [allStories]
+  );
+  
   // 検索フィルタリング
-  const filteredStories = searchQuery
-    ? allStories.filter(story => {
-        const matchesQuery = 
-          story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          story.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          story.source.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesSource = filterSource === 'all' || story.source === filterSource;
-        
-        return matchesQuery && matchesSource;
-      })
-    : allStories.filter(story => filterSource === 'all' || story.source === filterSource);
+  const filteredStories = useMemo(() => {
+    return searchQuery
+      ? allStories.filter(story => {
+          const matchesQuery = 
+            story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            story.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            story.source.toLowerCase().includes(searchQuery.toLowerCase());
+          
+          const matchesSource = filterSource === 'all' || story.source === filterSource;
+          
+          return matchesQuery && matchesSource;
+        })
+      : allStories.filter(story => filterSource === 'all' || story.source === filterSource);
+  }, [allStories, searchQuery, filterSource]);
 
   // ソート機能
-  const sortedStories = [...filteredStories].sort((a, b) => {
-    if (sortBy === 'date') {
-      return b.publishedAt - a.publishedAt; // 日付順（新しい順）
-    } else {
-      // 関連度順（検索キーワードの一致度でソート）
-      if (!searchQuery) return b.publishedAt - a.publishedAt;
-      
-      const query = searchQuery.toLowerCase();
-      const scoreA = 
-        (a.title.toLowerCase().includes(query) ? 2 : 0) +
-        (a.description.toLowerCase().includes(query) ? 1 : 0);
-      const scoreB = 
-        (b.title.toLowerCase().includes(query) ? 2 : 0) +
-        (b.description.toLowerCase().includes(query) ? 1 : 0);
-      
-      return scoreB - scoreA;
-    }
-  });
-
+  const sortedStories = useMemo(() => {
+    return [...filteredStories].sort((a, b) => {
+      if (sortBy === 'date') {
+        return b.publishedAt - a.publishedAt; // 日付順（新しい順）
+      } else {
+        // 関連度順（検索キーワードの一致度でソート）
+        if (!searchQuery) return b.publishedAt - a.publishedAt;
+        
+        const query = searchQuery.toLowerCase();
+        const scoreA = 
+          (a.title.toLowerCase().includes(query) ? 2 : 0) +
+          (a.description.toLowerCase().includes(query) ? 1 : 0);
+        const scoreB = 
+          (b.title.toLowerCase().includes(query) ? 2 : 0) +
+          (b.description.toLowerCase().includes(query) ? 1 : 0);
+        
+        return scoreB - scoreA;
+      }
+    });
+  }, [filteredStories, sortBy, searchQuery]);
   // 表示するストーリーを更新
   useEffect(() => {
     if (searchQuery) {
@@ -136,12 +150,22 @@ function App() {
     }
   };
 
-  const totalPages = Math.ceil(allStories.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedStories.length / ITEMS_PER_PAGE);
 
   if (selectedStory) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header category={category} onCategoryChange={handleCategoryChange} />
+        <Header 
+          category={category} 
+          onCategoryChange={handleCategoryChange}
+          searchQuery={searchQuery}
+          onSearch={handleSearch}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          filterSource={filterSource}
+          onFilterChange={setFilterSource}
+          availableSources={availableSources}
+        />
         <NewsDetail story={selectedStory} onBack={() => setSelectedStory(null)} />
       </div>
     );
