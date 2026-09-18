@@ -36,6 +36,12 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
       }
     };
     loadArticle();
+    
+    // 記事が変わったらチャットと要約をリセット
+    setSummary(null);
+    setShowSummary(false);
+    setChatMessages([]);
+    setChatInput('');
   }, [story.url]);
 
   const handleSummarize = async () => {
