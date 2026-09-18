@@ -95,35 +95,182 @@ export interface SummaryData {
   method: string;
 }
 
-export async function fetchSummary(content: string, title: string): Promise<SummaryData> {
-  if (!API_BASE_URL) {
-    throw new Error('API URL is not configured.');
+// OpenRouter APIをフロントエンドから直接呼び出す
+async function summarizeWithOpenRouterDirect(content: string, title: string): Promise<string | null> {
+  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    console.log('VITE_OPENROUTER_API_KEY not set');
+    return null;
   }
 
-  console.log('Generating summary...');
+  try {
+    console.log('Calling OpenRouter API directly from frontend...');
+    
+    // 複数の無料モデルを試す
+    const models = [
+      'google/gemini-2.0-flash-exp:free',
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free'
+    ];
+    
+    for (const model of models) {
+      try {
+        console.log(`Trying OpenRouter model: ${model}`);
+        
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Latest News App',
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'system',
+                content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。'
+              },
+              {
+                role: 'user',
+                content: `タイトル: ${title}\n\n記事内容:\n${content.substring(0, 3000)}\n\n要約:`
+              }
+            ],
+            max_tokens: 500,
+            temperature: 0.7,
+          }),
+          signal: AbortSignal.timeout(60000)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error(`OpenRouter model ${model} error:`, errorData);
+          continue;
+        }
+
+        const data = await response.json();
+        const summary = data.choices?.[0]?.message?.content;
+        
+        if (summary) {
+          console.log(`✓ OpenRouter API succeeded with model: ${model}`);
+          return summary.trim();
+        }
+      } catch (error) {
+        console.error(`OpenRouter model ${model} failed:`, error);
+        continue;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('OpenRouter direct call error:', error);
+    return null;
+  }
+}
+
+// Gemini APIをフロントエンドから直接呼び出す（フォールバック）
+async function summarizeWithGeminiDirect(content: string, title: string): Promise<string | null> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    console.log('VITE_GEMINI_API_KEY not set');
+    return null;
+  }
 
   try {
-    const params = new URLSearchParams({
-      content,
-      title,
-    });
-
+    console.log('Calling Gemini API directly from frontend...');
+    
     const response = await fetch(
-      `${API_BASE_URL}/api/summarize?${params.toString()}`,
-      { signal: AbortSignal.timeout(30000) }
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `以下のニュース記事を日本語で300字程度で要約してください。\n\nタイトル: ${title}\n\n記事内容:\n${content.substring(0, 3000)}\n\n要約:`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          }
+        }),
+        signal: AbortSignal.timeout(30000)
+      }
     );
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorData = await response.json();
+      console.error('Gemini API error:', errorData);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✓ Summary generated successfully');
-    return data;
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (summary) {
+      console.log('✓ Gemini API direct call succeeded');
+      return summary.trim();
+    }
+    
+    return null;
   } catch (error) {
-    console.error('Failed to generate summary:', error);
-    throw error;
+    console.error('Gemini direct call error:', error);
+    return null;
   }
+}
+
+export async function fetchSummary(content: string, title: string): Promise<SummaryData> {
+  console.log('Generating summary...');
+
+  // 1. まずOpenRouter APIをフロントエンドから直接試す
+  const openRouterSummary = await summarizeWithOpenRouterDirect(content, title);
+  if (openRouterSummary) {
+    return {
+      summary: openRouterSummary,
+      method: 'openrouter-direct'
+    };
+  }
+
+  // 2. Gemini APIをフロントエンドから直接試す（フォールバック）
+  const geminiSummary = await summarizeWithGeminiDirect(content, title);
+  if (geminiSummary) {
+    return {
+      summary: geminiSummary,
+      method: 'gemini-direct'
+    };
+  }
+
+  // 3. バックエンドAPIを試す
+  if (API_BASE_URL) {
+    try {
+      const params = new URLSearchParams({
+        content,
+        title,
+      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/summarize?${params.toString()}`,
+        { signal: AbortSignal.timeout(60000) }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✓ Summary generated via backend');
+        return data;
+      }
+    } catch (error) {
+      console.error('Backend API error:', error);
+    }
+  }
+
+  // 4. 全て失敗した場合
+  throw new Error('要約の生成に失敗しました。APIキーが設定されているか確認してください。');
 }
 
 export function formatDate(timestamp: number): string {

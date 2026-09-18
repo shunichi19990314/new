@@ -161,9 +161,11 @@ app.get('/api/test-openrouter', async (req, res) => {
     
     const { OpenAI } = await import('openai');
     
+    // タイムアウトを延長
     const openai = new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: apiKey,
+      timeout: 60000, // 60秒タイムアウト
       defaultHeaders: {
         'HTTP-Referer': 'https://latest-news-app.onrender.com',
         'X-OpenRouter-Title': 'Latest News App',
@@ -172,37 +174,66 @@ app.get('/api/test-openrouter', async (req, res) => {
 
     const prompt = '「こんにちは」と言ってください。';
     
-    console.log('Sending test request to OpenRouter API...');
-    const response = await openai.chat.completions.create({
-      model: 'google/gemini-2.0-flash-exp:free',
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 100,
-    });
+    // 複数のモデルを試す
+    const models = [
+      'google/gemini-2.0-flash-exp:free',
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free'
+    ];
     
-    const text = response.choices[0].message.content;
-    console.log('✓ OpenRouter API test succeeded');
+    let lastError = null;
     
-    res.json({
-      status: 'ok',
-      message: 'OpenRouter API is working correctly',
-      response: text,
-      model: 'google/gemini-2.0-flash-exp:free',
-      apiKeyPrefix: apiKey.substring(0, 10) + '...'
-    });
+    for (const model of models) {
+      try {
+        console.log(`Trying model: ${model}`);
+        
+        const response = await openai.chat.completions.create({
+          model: model,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 100,
+        });
+        
+        const text = response.choices[0].message.content;
+        console.log(`✓ OpenRouter API test succeeded with model: ${model}`);
+        
+        return res.json({
+          status: 'ok',
+          message: 'OpenRouter API is working correctly',
+          response: text,
+          model: model,
+          apiKeyPrefix: apiKey.substring(0, 10) + '...'
+        });
+      } catch (error) {
+        console.error(`✗ Model ${model} failed:`, error.message);
+        lastError = error;
+        continue;
+      }
+    }
+    
+    // 全てのモデルが失敗した場合
+    throw lastError || new Error('All models failed');
+    
   } catch (error) {
     console.error('✗ OpenRouter API test failed:', error.message);
-    console.error('Error details:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    console.error('Error code:', error.code);
+    console.error('Error status:', error.status);
     
     res.status(500).json({
       status: 'error',
       message: 'OpenRouter API test failed',
       error: error.message,
-      apiKeyPrefix: apiKey.substring(0, 10) + '...'
+      errorCode: error.code || null,
+      errorStatus: error.status || null,
+      apiKeyPrefix: apiKey.substring(0, 10) + '...',
+      suggestion: error.message.includes('Connection') 
+        ? 'Network connection issue. This might be due to Render free plan limitations or OpenRouter API being temporarily unavailable.'
+        : 'Please check your API key at https://openrouter.ai/keys'
     });
   }
 });
@@ -543,31 +574,54 @@ async function summarizeWithOpenRouter(text, title) {
     const openai = new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: apiKey,
+      timeout: 60000, // 60秒タイムアウト
       defaultHeaders: {
         'HTTP-Referer': 'https://latest-news-app.onrender.com', // 任意
         'X-OpenRouter-Title': 'Latest News App', // 任意
       },
     });
 
-    // 無料モデルを使用（例: google/gemini-flash-1.5）
-    // 利用可能なモデル: https://openrouter.ai/models
-    const response = await openai.chat.completions.create({
-      model: 'google/gemini-2.0-flash-exp:free', // 無料のGeminiモデル
-      messages: [
-        {
-          role: 'system',
-          content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。'
-        },
-        {
-          role: 'user',
-          content: `タイトル: ${title}\n\n記事内容:\n${text.substring(0, 3000)}\n\n要約:`
-        }
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
-    });
+    // 複数の無料モデルを試す
+    const models = [
+      'google/gemini-2.0-flash-exp:free',
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free'
+    ];
+    
+    let lastError = null;
+    
+    for (const model of models) {
+      try {
+        console.log(`Trying OpenRouter model: ${model}`);
+        
+        const response = await openai.chat.completions.create({
+          model: model,
+          messages: [
+            {
+              role: 'system',
+              content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。'
+            },
+            {
+              role: 'user',
+              content: `タイトル: ${title}\n\n記事内容:\n${text.substring(0, 3000)}\n\n要約:`
+            }
+          ],
+          max_tokens: 500,
+          temperature: 0.7,
+        });
 
-    return response.choices[0].message.content.trim();
+        const summary = response.choices[0].message.content.trim();
+        console.log(`✓ OpenRouter succeeded with model: ${model}`);
+        return summary;
+      } catch (error) {
+        console.error(`✗ OpenRouter model ${model} failed:`, error.message);
+        lastError = error;
+        continue;
+      }
+    }
+    
+    // 全てのモデルが失敗した場合
+    throw lastError || new Error('All OpenRouter models failed');
   } catch (error) {
     console.error('OpenRouter API error:', error.message);
     return null;

@@ -181,26 +181,32 @@ NHKニュース / Google News 日本語版 / ITmedia
 
 ### 対応API（優先順位順）
 
-1. **OpenRouter API**（🌟 最も推奨・地域制限なし・無料モデル利用可能）
+1. **OpenRouter (Direct)**（🌟 最も推奨・フロントエンドから直接呼び出し・無料モデル利用可能）
    - [OpenRouter](https://openrouter.ai/)でAPIキーを取得
-   - 環境変数: `OPENROUTER_API_KEY`
-   - モデル: Gemini Flash（無料）など多数
-   - **特徴**: 500以上のAIモデルに統一APIでアクセス可能
+   - 環境変数: `VITE_OPENROUTER_API_KEY`（フロントエンド）
+   - モデル: Gemini Flash、Llama 3、Mistral（全て無料）
+   - **特徴**: 500以上のAIモデルに統一APIでアクセス、Renderの制限なし
 
-2. **OpenAI API**（日本からアクセス可能）
+2. **Gemini (Direct)**（フォールバック・フロントエンドから直接呼び出し）
+   - [Google AI Studio](https://aistudio.google.com/apikey)でAPIキーを取得
+   - 環境変数: `VITE_GEMINI_API_KEY`（フロントエンド）
+   - モデル: Gemini 1.5 Flash
+
+3. **OpenRouter**（バックエンド経由・Renderの制限を受ける可能性）
+   - 環境変数: `OPENROUTER_API_KEY`（バックエンド）
+
+4. **OpenAI API**（バックエンド経由）
    - [OpenAI Platform](https://platform.openai.com/api-keys)でAPIキーを取得
-   - 環境変数: `OPENAI_API_KEY`
+   - 環境変数: `OPENAI_API_KEY`（バックエンド）
    - モデル: GPT-3.5 Turbo
 
-3. **Anthropic Claude API**（日本からアクセス可能）
+5. **Anthropic Claude API**（バックエンド経由）
    - [Anthropic Console](https://console.anthropic.com/)でAPIキーを取得
-   - 環境変数: `ANTHROPIC_API_KEY`
+   - 環境変数: `ANTHROPIC_API_KEY`（バックエンド）
    - モデル: Claude 3 Haiku
 
-4. **Google Gemini API**（⚠️ 地域制限あり）
-   - [Google AI Studio](https://aistudio.google.com/apikey)でAPIキーを取得
-   - 環境変数: `GEMINI_API_KEY`
-   - モデル: Gemini 1.5 Flash
+6. **Google Gemini API**（バックエンド経由・⚠️ 地域制限あり）
+   - 環境変数: `GEMINI_API_KEY`（バックエンド）
    - **注意**: 日本からはアクセスできない場合があります
 
 ### APIキーの設定方法
@@ -209,19 +215,21 @@ NHKニュース / Google News 日本語版 / ITmedia
 2. 「Add Environment Variable」をクリック
 3. 以下のいずれかを設定：
 
-| API | Key | Value |
-|-----|-----|-------|
-| OpenRouter | `OPENROUTER_API_KEY` | `sk-or-...` |
-| OpenAI | `OPENAI_API_KEY` | `sk-...` |
-| Claude | `ANTHROPIC_API_KEY` | `sk-ant-...` |
-| Gemini | `GEMINI_API_KEY` | `AI...` |
+| API | 設定場所 | Key | Value |
+|-----|---------|-----|-------|
+| **OpenRouter (Direct)** | フロントエンド | `VITE_OPENROUTER_API_KEY` | `sk-or-...` |
+| Gemini (Direct) | フロントエンド | `VITE_GEMINI_API_KEY` | `AI...` |
+| OpenRouter | バックエンド | `OPENROUTER_API_KEY` | `sk-or-...` |
+| OpenAI | バックエンド | `OPENAI_API_KEY` | `sk-...` |
+| Claude | バックエンド | `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| Gemini | バックエンド | `GEMINI_API_KEY` | `AI...` |
 
 4. 「Save Changes」をクリック
 5. バックエンドAPIを再デプロイ（「Manual Deploy」→「Deploy latest commit」）
 
-### OpenRouter APIの設定方法（推奨）
+### OpenRouter APIの設定方法（🌟 推奨）
 
-OpenRouterは500以上のAIモデルに統一APIでアクセスできるサービスです。無料モデルも利用可能です。
+OpenRouterは500以上のAIモデルに統一APIでアクセスできるサービスです。フロントエンドから直接呼び出すため、Renderのネットワーク制限を受けません。
 
 #### 1. APIキーの取得
 
@@ -231,42 +239,70 @@ OpenRouterは500以上のAIモデルに統一APIでアクセスできるサー�
 4. 「Create Key」をクリック
 5. APIキーをコピー（`sk-or-...`で始まる）
 
-#### 2. Renderでの設定
+#### 2. Renderでの設定（フロントエンド）
 
-1. Render Dashboardで`news-api`サービスの「Environment」を開く
+**重要**: フロントエンドの環境変数は`VITE_`で始める必要があります！
+
+1. Render Dashboardで**フロントエンドサービス**（latest-news-app）の「Environment」を開く
 2. 「Add Environment Variable」をクリック
 3. 以下を入力：
-   - **Key**: `OPENROUTER_API_KEY`
-   - **Value**: コピーしたAPIキー
+   - **Key**: `VITE_OPENROUTER_API_KEY`（`VITE_`で始める！）
+   - **Value**: `sk-or-v1-...`（コピーしたAPIキー）
 4. 「Save Changes」をクリック
-5. バックエンドAPIを再デプロイ
+5. フロントエンドを再デプロイ（「Manual Deploy」→「Deploy latest commit」）
 
 #### 3. 動作確認
 
-ブラウザで以下にアクセス：
-```
-https://あなたのAPIのURL/api/test-openrouter
-```
+1. ニュース記事を開く
+2. 「✨ AI要約を生成」ボタンをクリック
+3. 「OpenRouter (Direct)」の青色のバッジが表示されれば成功！
 
-成功した場合：
-```json
-{
-  "status": "ok",
-  "message": "OpenRouter API is working correctly",
-  "response": "こんにちは！",
-  "model": "google/gemini-2.0-flash-exp:free"
-}
-```
+**注意**: 
+- 環境変数名は`VITE_OPENROUTER_API_KEY`（`VITE_`で始める）
+- フロントエンドの環境変数に設定（バックエンドではない）
+- 再デプロイ後にブラウザのキャッシュをクリア（Ctrl+Shift+R）
 
-#### 利用可能なモデル（一部）
+#### 利用可能なモデル（自動フォールバック）
 
-- `google/gemini-2.0-flash-exp:free` - Gemini Flash（無料）
-- `meta-llama/llama-3.1-8b-instruct:free` - Llama 3（無料）
-- `mistralai/mistral-7b-instruct:free` - Mistral（無料）
-- `openai/gpt-4o` - GPT-4o（有料）
-- `anthropic/claude-3.5-sonnet` - Claude 3.5（有料）
+アプリは以下の無料モデルを自動的に試します：
+
+1. `google/gemini-2.0-flash-exp:free` - Gemini Flash（無料）
+2. `meta-llama/llama-3.1-8b-instruct:free` - Llama 3（無料）
+3. `mistralai/mistral-7b-instruct:free` - Mistral（無料）
+
+有料モデルも利用可能：
+- `openai/gpt-4o` - GPT-4o
+- `anthropic/claude-3.5-sonnet` - Claude 3.5
 
 完全なリストは https://openrouter.ai/models を参照してください。
+
+---
+
+### Gemini APIの設定方法（フォールバック）
+
+OpenRouterが利用できない場合の代替手段です。
+
+#### 1. APIキーの取得
+
+1. [Google AI Studio](https://aistudio.google.com/apikey)にアクセス
+2. Googleアカウントでログイン
+3. 「Create API Key」をクリック
+4. APIキーをコピー（`AI...`で始まる）
+
+#### 2. Renderでの設定（フロントエンド）
+
+1. Render Dashboardで**フロントエンドサービス**（latest-news-app）の「Environment」を開く
+2. 「Add Environment Variable」をクリック
+3. 以下を入力：
+   - **Key**: `VITE_GEMINI_API_KEY`（`VITE_`で始める）
+   - **Value**: コピーしたAPIキー
+4. 「Save Changes」をクリック
+5. フロントエンドを再デプロイ
+
+#### 3. 動作確認
+
+ニュース記事を開いて「✨ AI要約を生成」ボタンをクリック。
+「Gemini (Direct)」の紫色のバッジが表示されれば成功です！
 
 ### APIキー未設定の場合
 
