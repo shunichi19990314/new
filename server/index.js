@@ -6,6 +6,7 @@ import cors from 'cors';
 import Parser from 'rss-parser';
 import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
+import iconv from 'iconv-lite';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,6 +15,81 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// エンコーディングを検出する関数
+function detectEncoding(buffer, contentType) {
+  // Content-Typeヘッダーからcharsetを取得
+  const charsetMatch = contentType?.match(/charset=([^\s;]+)/i);
+  if (charsetMatch) {
+    return charsetMatch[1].toLowerCase();
+  }
+
+  // HTML/XMLの先頭部分からcharsetを検出
+  const htmlSnippet = buffer.toString('ascii', 0, Math.min(buffer.length, 4096));
+  
+  // <?xml version="1.0" encoding="..."?>
+  const xmlEncodingMatch = htmlSnippet.match(/<\?xml[^>]+encoding=["']?([^"'\s;>]+)/i);
+  if (xmlEncodingMatch) {
+    return xmlEncodingMatch[1].toLowerCase();
+  }
+
+  // <meta charset="...">
+  const metaCharsetMatch = htmlSnippet.match(/<meta[^>]+charset=["']?([^"'\s;>]+)/i);
+  if (metaCharsetMatch) {
+    return metaCharsetMatch[1].toLowerCase();
+  }
+
+  // <meta http-equiv="Content-Type" content="...charset=...">
+  const metaContentTypeMatch = htmlSnippet.match(/<meta[^>]+content=["'][^"']*charset=([^"'\s;>]+)/i);
+  if (metaContentTypeMatch) {
+    return metaContentTypeMatch[1].toLowerCase();
+  }
+
+  // デフォルトはUTF-8
+  return 'utf-8';
+}
+
+// RSSフィードを取得してエンコーディングを処理する関数
+async function fetchRSSFeed(url) {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; NewsAggregator/1.0)',
+      'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+    },
+    timeout: 10000,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  const nodeBuffer = Buffer.from(buffer);
+  const contentType = response.headers.get('content-type');
+  
+  // エンコーディングを検出
+  let encoding = detectEncoding(nodeBuffer, contentType);
+  const encodingMap = {
+    'shift_jis': 'shiftjis',
+    'shift-jis': 'shiftjis',
+    'sjis': 'shiftjis',
+    'x-sjis': 'shiftjis',
+    'euc-jp': 'eucjp',
+    'euc_jp': 'eucjp',
+    'x-euc-jp': 'eucjp',
+    'iso-2022-jp': 'iso2022jp',
+    'utf-8': 'utf8',
+    'utf8': 'utf8',
+  };
+
+  const normalizedEncoding = encodingMap[encoding] || encoding;
+  
+  if (iconv.encodingExists(normalizedEncoding)) {
+    return iconv.decode(nodeBuffer, normalizedEncoding);
+  }
+  
+  return iconv.decode(nodeBuffer, 'utf8');
+}
+
 // RSSパーサーを初期化
 const parser = new Parser({
   timeout: 10000,
@@ -21,6 +97,12 @@ const parser = new Parser({
     'User-Agent': 'Mozilla/5.0 (compatible; NewsAggregator/1.0)',
   },
 });
+
+// RSSフィードをパースするラッパー関数
+async function parseRSSFeed(url) {
+  const xmlString = await fetchRSSFeed(url);
+  return await parser.parseString(xmlString);
+}
 
 // カテゴリ定義
 const CATEGORIES = {
@@ -67,7 +149,7 @@ app.get('/api/news/:category', async (req, res) => {
     const results = await Promise.allSettled(
       rssUrls.map(async (url) => {
         try {
-          const feed = await parser.parseURL(url);
+          const feed = await parseRSSFeed(url);
           return feed.items.map((item) => ({
             title: item.title || '',
             link: item.link || '',
@@ -139,7 +221,41 @@ app.get('/api/article', async (req, res) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const html = await response.text();
+    // レスポンスをバッファとして取得
+    const buffer = await response.arrayBuffer();
+    const nodeBuffer = Buffer.from(buffer);
+    
+    // エンコーディングを検出
+    const contentType = response.headers.get('content-type');
+    let encoding = detectEncoding(nodeBuffer, contentType);
+    console.log(`Detected encoding: ${encoding}`);
+
+    // エンコーディングのエイリアスを正規化
+    const encodingMap = {
+      'shift_jis': 'shiftjis',
+      'shift-jis': 'shiftjis',
+      'sjis': 'shiftjis',
+      'x-sjis': 'shiftjis',
+      'euc-jp': 'eucjp',
+      'euc_jp': 'eucjp',
+      'x-euc-jp': 'eucjp',
+      'iso-2022-jp': 'iso2022jp',
+      'utf-8': 'utf8',
+      'utf8': 'utf8',
+    };
+
+    const normalizedEncoding = encodingMap[encoding] || encoding;
+    
+    // iconv-liteでデコード
+    let html;
+    if (iconv.encodingExists(normalizedEncoding)) {
+      html = iconv.decode(nodeBuffer, normalizedEncoding);
+      console.log(`Decoded with encoding: ${normalizedEncoding}`);
+    } else {
+      console.warn(`Unknown encoding: ${normalizedEncoding}, falling back to UTF-8`);
+      html = iconv.decode(nodeBuffer, 'utf8');
+    }
+
     const $ = cheerio.load(html);
 
     // Open Graphメタデータを取得
