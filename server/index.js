@@ -51,7 +51,7 @@ app.get('/health', (req, res) => {
 
 // ニュース取得API
 app.get('/api/news/:category', async (req, res) => {
-  const category = req.params.category as keyof typeof CATEGORIES;
+  const category = req.params.category;
   
   if (!CATEGORIES[category]) {
     return res.status(400).json({ error: 'Invalid category' });
