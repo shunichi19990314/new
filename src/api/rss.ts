@@ -95,35 +95,98 @@ export interface SummaryData {
   method: string;
 }
 
-export async function fetchSummary(content: string, title: string): Promise<SummaryData> {
-  if (!API_BASE_URL) {
-    throw new Error('API URL is not configured.');
+// Gemini APIをフロントエンドから直接呼び出す
+async function summarizeWithGeminiDirect(content: string, title: string): Promise<string | null> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    console.log('VITE_GEMINI_API_KEY not set');
+    return null;
   }
 
-  console.log('Generating summary...');
-
   try {
-    const params = new URLSearchParams({
-      content,
-      title,
-    });
-
+    console.log('Calling Gemini API directly from frontend...');
+    
     const response = await fetch(
-      `${API_BASE_URL}/api/summarize?${params.toString()}`,
-      { signal: AbortSignal.timeout(30000) }
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `以下のニュース記事を日本語で300字程度で要約してください。\n\nタイトル: ${title}\n\n記事内容:\n${content.substring(0, 3000)}\n\n要約:`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          }
+        }),
+        signal: AbortSignal.timeout(30000)
+      }
     );
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorData = await response.json();
+      console.error('Gemini API error:', errorData);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✓ Summary generated successfully');
-    return data;
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (summary) {
+      console.log('✓ Gemini API direct call succeeded');
+      return summary.trim();
+    }
+    
+    return null;
   } catch (error) {
-    console.error('Failed to generate summary:', error);
-    throw error;
+    console.error('Gemini direct call error:', error);
+    return null;
   }
+}
+
+export async function fetchSummary(content: string, title: string): Promise<SummaryData> {
+  console.log('Generating summary...');
+
+  // 1. まずGemini APIをフロントエンドから直接試す
+  const geminiSummary = await summarizeWithGeminiDirect(content, title);
+  if (geminiSummary) {
+    return {
+      summary: geminiSummary,
+      method: 'gemini-direct'
+    };
+  }
+
+  // 2. バックエンドAPIを試す
+  if (API_BASE_URL) {
+    try {
+      const params = new URLSearchParams({
+        content,
+        title,
+      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/summarize?${params.toString()}`,
+        { signal: AbortSignal.timeout(60000) }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✓ Summary generated via backend');
+        return data;
+      }
+    } catch (error) {
+      console.error('Backend API error:', error);
+    }
+  }
+
+  // 3. 全て失敗した場合
+  throw new Error('要約の生成に失敗しました。APIキーが設定されているか確認してください。');
 }
 
 export function formatDate(timestamp: number): string {

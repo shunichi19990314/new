@@ -209,19 +209,52 @@ NHKニュース / Google News 日本語版 / ITmedia
 2. 「Add Environment Variable」をクリック
 3. 以下のいずれかを設定：
 
-| API | Key | Value |
-|-----|-----|-------|
-| OpenRouter | `OPENROUTER_API_KEY` | `sk-or-...` |
-| OpenAI | `OPENAI_API_KEY` | `sk-...` |
-| Claude | `ANTHROPIC_API_KEY` | `sk-ant-...` |
-| Gemini | `GEMINI_API_KEY` | `AI...` |
+| API | 設定場所 | Key | Value |
+|-----|---------|-----|-------|
+| **Gemini (Direct)** | フロントエンド | `VITE_GEMINI_API_KEY` | `AI...` |
+| OpenRouter | バックエンド | `OPENROUTER_API_KEY` | `sk-or-...` |
+| OpenAI | バックエンド | `OPENAI_API_KEY` | `sk-...` |
+| Claude | バックエンド | `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| Gemini | バックエンド | `GEMINI_API_KEY` | `AI...` |
 
 4. 「Save Changes」をクリック
 5. バックエンドAPIを再デプロイ（「Manual Deploy」→「Deploy latest commit」）
 
-### OpenRouter APIの設定方法（推奨）
+### Gemini APIの設定方法（🌟 最も簡単・推奨）
 
-OpenRouterは500以上のAIモデルに統一APIでアクセスできるサービスです。無料モデルも利用可能です。
+Gemini APIをフロントエンドから直接呼び出す方法です。Renderのネットワーク制限を受けません。
+
+#### 1. APIキーの取得
+
+1. [Google AI Studio](https://aistudio.google.com/apikey)にアクセス
+2. Googleアカウントでログイン
+3. 「Create API Key」をクリック
+4. APIキーをコピー（`AI...`で始まる）
+
+#### 2. Renderでの設定（フロントエンド）
+
+1. Render Dashboardで**フロントエンドサービス**（latest-news-app）の「Environment」を開く
+2. 「Add Environment Variable」をクリック
+3. 以下を入力：
+   - **Key**: `VITE_GEMINI_API_KEY`（`VITE_`で始まる必要があります）
+   - **Value**: コピーしたAPIキー
+4. 「Save Changes」をクリック
+5. フロントエンドを再デプロイ（「Manual Deploy」→「Deploy latest commit」）
+
+#### 3. 動作確認
+
+ニュース記事を開いて「✨ AI要約を生成」ボタンをクリック。
+「Gemini (Direct)」のバッジが表示されれば成功です！
+
+**注意**: フロントエンドの環境変数は`VITE_`で始める必要があります。
+
+---
+
+### OpenRouter APIの設定方法（代替）
+
+OpenRouterは500以上のAIモデルに統一APIでアクセスできるサービスです。
+
+**⚠️ 注意**: Renderの無料プランでは、バックエンドからOpenRouterへの接続が制限されている場合があります。その場合はGemini API（上記）を使用してください。
 
 #### 1. APIキーの取得
 
@@ -231,9 +264,9 @@ OpenRouterは500以上のAIモデルに統一APIでアクセスできるサー�
 4. 「Create Key」をクリック
 5. APIキーをコピー（`sk-or-...`で始まる）
 
-#### 2. Renderでの設定
+#### 2. Renderでの設定（バックエンド）
 
-1. Render Dashboardで`news-api`サービスの「Environment」を開く
+1. Render Dashboardで**バックエンドAPIサービス**（news-api）の「Environment」を開く
 2. 「Add Environment Variable」をクリック
 3. 以下を入力：
    - **Key**: `OPENROUTER_API_KEY`
@@ -257,6 +290,8 @@ https://あなたのAPIのURL/api/test-openrouter
   "model": "google/gemini-2.0-flash-exp:free"
 }
 ```
+
+**エラーの場合**: Renderの無料プランの制限が原因の可能性があります。Gemini API（上記）を使用してください。
 
 #### 利用可能なモデル（一部）
 

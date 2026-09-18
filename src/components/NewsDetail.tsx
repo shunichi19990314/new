@@ -139,6 +139,11 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">✨</span>
               <h3 className="font-bold text-purple-900 dark:text-purple-100">AI要約</h3>
+              {summary.method === 'gemini-direct' && (
+                <span className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full">
+                  Gemini (Direct)
+                </span>
+              )}
               {summary.method === 'openrouter' && (
                 <span className="text-xs px-2 py-0.5 bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded-full">
                   OpenRouter
