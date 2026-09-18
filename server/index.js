@@ -130,7 +130,15 @@ const CATEGORIES = {
 
 // ヘルスチェック
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    apiKeys: {
+      openai: !!process.env.OPENAI_API_KEY,
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+      gemini: !!process.env.GEMINI_API_KEY,
+    }
+  });
 });
 
 // ニュース取得API
@@ -369,12 +377,79 @@ function extractiveSummary(text, maxSentences = 5) {
   return sentences.slice(0, maxSentences).join('');
 }
 
+// OpenAI APIを使った要約関数
+async function summarizeWithOpenAI(text, title) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    console.log('OPENAI_API_KEY not set');
+    return null;
+  }
+
+  try {
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({ apiKey });
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'あなたはニュース記事の要約を行うアシスタントです。日本語で300字程度で要約してください。'
+        },
+        {
+          role: 'user',
+          content: `タイトル: ${title}\n\n記事内容:\n${text.substring(0, 3000)}\n\n要約:`
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    return response.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('OpenAI API error:', error.message);
+    return null;
+  }
+}
+
+// Anthropic Claude APIを使った要約関数
+async function summarizeWithClaude(text, title) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey) {
+    console.log('ANTHROPIC_API_KEY not set');
+    return null;
+  }
+
+  try {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const anthropic = new Anthropic({ apiKey });
+
+    const response = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 500,
+      messages: [
+        {
+          role: 'user',
+          content: `以下のニュース記事を日本語で300字程度で要約してください。\n\nタイトル: ${title}\n\n記事内容:\n${text.substring(0, 3000)}\n\n要約:`
+        }
+      ],
+    });
+
+    return response.content[0].text.trim();
+  } catch (error) {
+    console.error('Anthropic API error:', error.message);
+    return null;
+  }
+}
+
 // Gemini APIを使った要約関数
 async function summarizeWithGemini(text, title) {
   const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey) {
-    console.log('GEMINI_API_KEY not set, using extractive summary');
+    console.log('GEMINI_API_KEY not set');
     return null;
   }
 
@@ -410,20 +485,54 @@ app.get('/api/summarize', async (req, res) => {
   }
 
   try {
-    console.log('Generating summary...');
+    console.log('=== Generating summary ===');
+    console.log('Available API keys:');
+    console.log('- OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '✓' : '✗');
+    console.log('- ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? '✓' : '✗');
+    console.log('- GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✓' : '✗');
     
-    // まずGemini APIを試す
-    let summary = await summarizeWithGemini(content, title || '');
+    let summary = null;
+    let method = 'extractive';
     
-    // Gemini APIが使えない場合は簡易抽出要約
+    // 1. OpenAI APIを試す（日本からアクセス可能）
+    if (process.env.OPENAI_API_KEY) {
+      console.log('Trying OpenAI API...');
+      summary = await summarizeWithOpenAI(content, title || '');
+      if (summary) {
+        method = 'openai';
+        console.log('✓ OpenAI API succeeded');
+      }
+    }
+    
+    // 2. Anthropic Claude APIを試す（日本からアクセス可能）
+    if (!summary && process.env.ANTHROPIC_API_KEY) {
+      console.log('Trying Anthropic Claude API...');
+      summary = await summarizeWithClaude(content, title || '');
+      if (summary) {
+        method = 'claude';
+        console.log('✓ Anthropic Claude API succeeded');
+      }
+    }
+    
+    // 3. Gemini APIを試す（地域制限あり）
+    if (!summary && process.env.GEMINI_API_KEY) {
+      console.log('Trying Gemini API...');
+      summary = await summarizeWithGemini(content, title || '');
+      if (summary) {
+        method = 'gemini';
+        console.log('✓ Gemini API succeeded');
+      }
+    }
+    
+    // 4. 全てのAPIが失敗した場合は抽出型要約
     if (!summary) {
-      console.log('Using extractive summary');
+      console.log('Using extractive summary (fallback)');
       summary = extractiveSummary(content, 5);
     }
     
     res.json({
       summary,
-      method: summary ? 'ai' : 'extractive',
+      method,
     });
   } catch (error) {
     console.error('Error generating summary:', error);

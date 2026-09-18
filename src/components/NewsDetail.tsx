@@ -47,7 +47,8 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
       setShowSummary(true);
     } catch (err) {
       console.error('Failed to generate summary:', err);
-      alert('要約の生成に失敗しました。しばらくしてからもう一度お試しください。');
+      const errorMessage = err instanceof Error ? err.message : '不明なエラー';
+      alert(`要約の生成に失敗しました。\n\nエラー: ${errorMessage}\n\nAPIキーが正しく設定されているか確認してください。`);
     } finally {
       setSummaryLoading(false);
     }
@@ -133,20 +134,38 @@ export default function NewsDetail({ story, onBack }: NewsDetailProps) {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">✨</span>
               <h3 className="font-bold text-purple-900 dark:text-purple-100">AI要約</h3>
-              {summary.method === 'ai' && (
+              {summary.method === 'openai' && (
+                <span className="text-xs px-2 py-0.5 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full">
+                  OpenAI
+                </span>
+              )}
+              {summary.method === 'claude' && (
+                <span className="text-xs px-2 py-0.5 bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full">
+                  Claude
+                </span>
+              )}
+              {summary.method === 'gemini' && (
                 <span className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full">
                   Gemini
                 </span>
               )}
               {summary.method === 'extractive' && (
                 <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
-                  抽出
+                  抽出型
                 </span>
               )}
             </div>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
               {summary.summary}
             </p>
+            {summary.method === 'extractive' && (
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
+                <p className="text-yellow-800 dark:text-yellow-200">
+                  💡 <strong>ヒント:</strong> APIキーを設定すると、より高品質なAI要約が利用できます。
+                  Render Dashboardの「Environment」でAPIキーを設定してください。
+                </p>
+              </div>
+            )}
           </div>
         )}
 
