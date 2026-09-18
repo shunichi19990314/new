@@ -106,9 +106,31 @@ function App() {
                 <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
                   {error}
                 </p>
+                {error.includes('VITE_API_URL') && (
+                  <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded text-sm">
+                    <p className="font-bold mb-2">🔧 設定方法：</p>
+                    <ol className="list-decimal list-inside space-y-1 text-yellow-900 dark:text-yellow-100">
+                      <li>Render Dashboardでフロントエンドサービスを開く</li>
+                      <li>左メニューの「Environment」をクリック</li>
+                      <li>「Add Environment Variable」をクリック</li>
+                      <li>Key: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">VITE_API_URL</code></li>
+                      <li>Value: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">https://あなたのAPIのURL</code></li>
+                      <li>「Save Changes」→「Manual Deploy」で再デプロイ</li>
+                    </ol>
+                  </div>
+                )}
+                {error.includes('タイムアウト') && (
+                  <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded text-sm">
+                    <p className="font-bold mb-2">💡 ヒント：</p>
+                    <p className="text-yellow-900 dark:text-yellow-100">
+                      無料プランは15分間アクセスがないとスリープします。<br />
+                      初回アクセス時に30秒ほどお待ちください。
+                    </p>
+                  </div>
+                )}
                 <button
                   onClick={() => loadStories(category)}
-                  className="text-sm text-yellow-700 dark:text-yellow-300 underline hover:no-underline font-medium"
+                  className="mt-3 text-sm text-yellow-700 dark:text-yellow-300 underline hover:no-underline font-medium"
                 >
                   🔄 再読み込み
                 </button>
