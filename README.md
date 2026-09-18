@@ -2,122 +2,156 @@
 
 日本語の最新ニュースをサイト内で閲覧できるニュースアプリです。
 
-## ✨ 機能
+---
 
-### ニュースカテゴリ
-- 🔥 **トップ** - NHK、Google News JPから総合ニュース
-- 💻 **テクノロジー** - IT・テクノロジー関連ニュース
-- 💼 **ビジネス** - 経済・ビジネスニュース
-- 🎬 **エンタメ** - エンターテインメントニュース
-- ⚽ **スポーツ** - スポーツニュース
-- 🔬 **科学** - 科学・テクノロジーニュース
+## 🚀 GitHub公開 → Renderデプロイ 完全ガイド
 
-### 閲覧機能
-- 📝 **要約表示** - RSSフィードの記事本文をサイト内で直接表示
-- 🌐 **サイト内閲覧** - iframeで元サイトをサイト内に表示
-- ↗ **元サイトリンク** - 外部リンクで元記事を開く
-- 📄 **ページネーション** - 15件ずつページ送り
-- 🖼️ **サムネイル表示** - 記事のサムネイル画像を自動取得
+> ⏱️ 所要時間：約10分
+> 💰 費用：無料
 
-### UI/UX
-- 📱 レスポンシブデザイン（モバイル対応）
-- 🌙 ダークモード対応
-- ⚡ スケルトンローディング
-- 🎨 モダンなカードデザイン
+---
 
-## 🔧 技術スタック
+### 📋 必要なもの（事前準備）
 
-- **React 18** + **TypeScript**
-- **Vite** (ビルドツール)
-- **Tailwind CSS** (スタイリング)
-- **RSS 2 JSON API** (CORS対応のRSS取得)
+| 用意するもの | 無料？ | 取得先 |
+|---|---|---|
+| GitHub アカウント | ✅ 無料 | [github.com](https://github.com/signup) |
+| Render アカウント | ✅ 無料 | [render.com](https://dashboard.render.com/register) |
+| Git（PCにインストール） | ✅ 無料 | [git-scm.com](https://git-scm.com/downloads) |
 
-## 📡 データソース
+---
 
-- NHKニュース RSS
-- Google News 日本語版 RSS
-- ITmedia RSS
+## ステップ 1️⃣ GitHubでリポジトリを作る
 
-## 🚀 ローカル開発
+> 「リポジトリ」＝ ファイルを保管するオンラインのフォルダ
 
-```bash
-npm install
-npm run dev
+1. [github.com](https://github.com) にログイン
+2. 画面右上の **「＋」** ボタンをクリック
+3. **「New repository」** をクリック
+4. 以下のように入力：
+
+```
+Repository name:  latest-news-app    ← 好きな名前でOK
+Description:      日本語ニュースアプリ  ← 空欄でもOK
+● Public          ← 「Public」を選んでください
+☑ Add a README   ← チェックを入れる
 ```
 
-## 📦 ビルド
+5. 一番下の **「Create repository」** ボタンをクリック
+
+✅ これでリポジトリができました！
+
+---
+
+## ステップ 2️⃣ 自分のPCのファイルをGitHubに送る
+
+### ターミナル（コマンドプロンプト）を開く
+
+- **Mac**: `Command + Space` → 「ターミナル」と入力
+- **Windows**: `Windowsキー` → 「cmd」または「PowerShell」と入力
+
+### 以下のコマンドを1行ずつコピー＆ペーストして実行
 
 ```bash
-npm run build
-```
+# ① プロジェクトのフォルダに移動
+cd プロジェクトのフォルダのパス
 
-## 🚀 GitHubに公開する手順
-
-### 1. GitHubで新規リポジトリを作成
-
-1. [GitHub](https://github.com)にログイン
-2. 右上の「+」→「New repository」をクリック
-3. リポジトリ名を入力（例: `latest-news-app`）
-4. 「Public」または「Private」を選択
-5. 「Create repository」をクリック
-
-### 2. ローカルでGitを初期化してプッシュ
-
-ターミナルで以下のコマンドを実行：
-
-```bash
-# Gitを初期化
+# ② Gitを始める宣言
 git init
 
-# ファイルを追加
+# ③ ファイルを全部追加
 git add .
 
-# 初回コミット
-git commit -m "Initial commit: 日本語ニュースアグリゲーター"
+# ④ 「最初のバージョン」として保存
+git commit -m "日本語ニュースアプリの初回公開"
 
-# メインブランチを設定
+# ⑤ ブランチ名をmainに
 git branch -M main
+```
 
-# GitHubリポジトリをリモートに追加（YOUR_USERNAMEとYOUR_REPOを変更）
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+### GitHubのリポジトリURLを接続
 
-# プッシュ
+GitHubのリポジトリページで **「<> Code」** ボタン → URLをコピーして、以下のように実行：
+
+```bash
+# ⑥ GitHubと接続（YOUR_USERNAME を自分のユーザー名に置き換えてください）
+git remote add origin https://github.com/YOUR_USERNAME/latest-news-app.git
+
+# ⑦ ファイルをGitHubに送信！
 git push -u origin main
 ```
 
-### 3. Renderでデプロイ
+> 💡 GitHubからユーザー名とパスワード（トークン）を聞かれたら入力してください
 
-1. [Render Dashboard](https://dashboard.render.com/)にアクセス
-2. 「New」→「Static Site」をクリック
-3. GitHubリポジトリを接続（初回はRenderにGitHubアクセスを許可）
-4. 先ほどプッシュしたリポジトリを選択
-5. 設定を確認：
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist`
-6. 「Create Static Site」をクリック
-7. デプロイ完了後、表示されるURLでサイトにアクセス
+✅ これでGitHubにファイルが公開されました！
 
-### 4. 自動デプロイ
+---
 
-GitHubにプッシュするたびに、Renderが自動的に再デプロイします。
+## ステップ 3️⃣ Renderでサイトに公開する
 
-## 🌐 Renderへのデプロイ（詳細）
+1. [render.com](https://dashboard.render.com) にログイン
+2. 画面右上の **「New +」** をクリック
+3. **「Static Site」** をクリック
+4. **「Connect a repository」** をクリック
+   - 初回はGitHubとの連携許可を求められます → **「Authorize Render」** をクリック
+5. 先ほど作った **`latest-news-app`** を探して **「Connect」** をクリック
+6. 以下の設定を確認（自動で入力されています）：
 
-### render.yamlを使用（推奨）
+| 項目 | 値 |
+|---|---|
+| **Name** | `latest-news-app`（好きな名前でOK） |
+| **Branch** | `main` |
+| **Build Command** | `npm install && npm run build` |
+| **Publish Directory** | `dist` |
 
-`render.yaml`ファイルが既に設定されているので、GitHubリポジトリを接続するだけで自動デプロイされます。
+7. 一番下の **「Create Static Site」** ボタンをクリック
+8. 2〜3分待つとデプロイ完了！
 
-### 手動設定
+✅ 表示されたURL（例: `latest-news-app.onrender.com`）があなたのサイトです！
 
-1. Render Dashboardで「New」→「Static Site」
-2. リポジトリを接続
-3. 以下を設定：
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist`
-4. デプロイ
+---
 
-## 📋 注意事項
+## 🎉 完成！
 
-- RSSフィードのコンテンツは各メディアの著作権に帰属します
-- 一部のサイトはiframeでの表示に対応していない場合があります（X-Frame-Options制限）
-- APIキー不要で動作します
+おめでとうございます！あなたのサイトがインターネット上に公開されました。
+
+---
+
+## 📌 よくある質問
+
+### Q. もう一度デプロイするには？
+GitHubにファイルをプッシュするだけで**自動で再デプロイ**されます。
+
+```bash
+git add .
+git commit -m "変更内容の説明"
+git push
+```
+
+### Q. サイトのURLを変更したい
+Renderダッシュボード → 該当のサイト → 「Settings」→ 「Change name」で変更可能
+
+### Q. デプロイに失敗した
+- Renderのダッシュボードで「Logs」を確認
+- Build Commandが正しいか確認
+- `npm run build` がローカルで成功するか確認
+
+### Q. 無料プランの制限は？
+- 15分間アクセスがないとスリープする（初回アクセス時に30秒ほど待たされる）
+- 月100GBの帯域幅まで無料
+
+---
+
+## ✨ アプリの機能
+
+- 🔥 トップ / 💻 テクノロジー / 💼 ビジネス / 🎬 エンタメ / ⚽ スポーツ / 🔬 科学
+- 📝 要約表示 / 🌐 サイト内閲覧 / ↗ 元サイトリンク
+- 📱 スマホ対応 / 🖼️ サムネイル表示
+
+## 🔧 技術スタック
+
+React + TypeScript + Vite + Tailwind CSS + RSS API
+
+## 📡 データソース
+
+NHKニュース / Google News 日本語版 / ITmedia
