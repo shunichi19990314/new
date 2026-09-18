@@ -1,5 +1,5 @@
 import type { Story } from '../types';
-import { formatTimeAgo, getStoryUrl } from '../api/hackernews';
+import { formatDate } from '../api/rss';
 
 interface NewsListProps {
   stories: Story[];
@@ -17,10 +17,11 @@ export default function NewsList({ stories, loading, onSelect }: NewsListProps) 
             className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm animate-pulse"
           >
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="flex-shrink-0 w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
                 <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
               </div>
             </div>
           </div>
@@ -61,7 +62,12 @@ interface NewsCardProps {
 }
 
 function NewsCard({ story, index, onClick }: NewsCardProps) {
-  const domain = story.url ? new URL(story.url).hostname.replace('www.', '') : null;
+  let domain = '';
+  try {
+    domain = new URL(story.url).hostname.replace('www.', '');
+  } catch {
+    domain = story.source;
+  }
 
   return (
     <article
@@ -69,47 +75,40 @@ function NewsCard({ story, index, onClick }: NewsCardProps) {
       onClick={onClick}
     >
       <div className="flex gap-3">
-        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg font-bold text-sm">
-          {index}
-        </div>
+        {story.thumbnail && (
+          <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+            <img
+              src={story.thumbnail}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <h2 className="text-gray-900 dark:text-white font-medium leading-snug line-clamp-2 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
             {story.title}
           </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+            {story.description}
+          </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {domain && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded">
-                🌐 {domain}
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              👤 {story.by}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded">
+              📰 {domain}
             </span>
-            <span className="flex items-center gap-1">
-              ⬆️ {story.score}
-            </span>
-            {story.descendants !== undefined && (
+            {story.author && (
               <span className="flex items-center gap-1">
-                💬 {story.descendants}
+                👤 {story.author}
               </span>
             )}
             <span className="flex items-center gap-1">
-              🕐 {formatTimeAgo(story.time)}
+              🕐 {formatDate(story.publishedAt)}
             </span>
           </div>
         </div>
-        {story.url && (
-          <a
-            href={getStoryUrl(story)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex-shrink-0 self-center w-8 h-8 flex items-center justify-center text-gray-400 hover:text-orange-500 transition-colors"
-            title="外部リンクで開く"
-          >
-            ↗
-          </a>
-        )}
       </div>
     </article>
   );

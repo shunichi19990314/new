@@ -17,7 +17,7 @@ export default function Header({ category, onCategoryChange }: HeaderProps) {
                 Latest News
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Hacker News アグリゲーター
+                日本語ニュースアグリゲーター
               </p>
             </div>
           </div>
