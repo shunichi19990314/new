@@ -179,14 +179,38 @@ NHKニュース / Google News 日本語版 / ITmedia
 
 記事詳細画面で「✨ AI要約を生成」ボタンをクリックすると、記事の内容を要約できます。
 
-### Gemini APIを使う場合（高品質な要約）
+### 対応API（優先順位順）
 
-1. [Google AI Studio](https://aistudio.google.com/apikey)でAPIキーを取得（無料）
-2. Render Dashboardで`news-api`サービスの「Environment」を開く
-3. 以下を追加：
-   - **Key**: `GEMINI_API_KEY`
-   - **Value**: 取得したAPIキー
-4. バックエンドAPIを再デプロイ
+1. **OpenAI API**（推奨・日本からアクセス可能）
+   - [OpenAI Platform](https://platform.openai.com/api-keys)でAPIキーを取得
+   - 環境変数: `OPENAI_API_KEY`
+   - モデル: GPT-3.5 Turbo
+
+2. **Anthropic Claude API**（日本からアクセス可能）
+   - [Anthropic Console](https://console.anthropic.com/)でAPIキーを取得
+   - 環境変数: `ANTHROPIC_API_KEY`
+   - モデル: Claude 3 Haiku
+
+3. **Google Gemini API**（⚠️ 地域制限あり）
+   - [Google AI Studio](https://aistudio.google.com/apikey)でAPIキーを取得
+   - 環境変数: `GEMINI_API_KEY`
+   - モデル: Gemini 1.5 Flash
+   - **注意**: 日本からはアクセスできない場合があります
+
+### APIキーの設定方法
+
+1. Render Dashboardで`news-api`サービスの「Environment」を開く
+2. 「Add Environment Variable」をクリック
+3. 以下のいずれかを設定：
+
+| API | Key | Value |
+|-----|-----|-------|
+| OpenAI | `OPENAI_API_KEY` | `sk-...` |
+| Claude | `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| Gemini | `GEMINI_API_KEY` | `AI...` |
+
+4. 「Save Changes」をクリック
+5. バックエンドAPIを再デプロイ（「Manual Deploy」→「Deploy latest commit」）
 
 ### APIキー未設定の場合
 
