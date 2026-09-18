@@ -10,6 +10,15 @@ if (!API_BASE_URL) {
   console.log('✓ API Base URL:', API_BASE_URL);
 }
 
+export interface ArticleData {
+  url: string;
+  title: string;
+  description: string;
+  image: string;
+  content: string;
+  type: string;
+}
+
 export async function fetchStories(category: Category): Promise<Story[]> {
   if (!API_BASE_URL) {
     throw new Error('API URL is not configured. Please set VITE_API_URL environment variable.');
@@ -19,7 +28,7 @@ export async function fetchStories(category: Category): Promise<Story[]> {
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/news/${category}`, {
-      signal: AbortSignal.timeout(30000), // 30秒タイムアウト
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -29,7 +38,6 @@ export async function fetchStories(category: Category): Promise<Story[]> {
     const data = await response.json();
     console.log(`✓ Received ${data.count} stories from API`);
 
-    // APIのレスポンスをStory型に変換
     return data.items.map((item: any, index: number) => ({
       id: `${category}-${index}-${item.link}`,
       title: item.title || 'タイトルなし',
@@ -53,6 +61,32 @@ export async function fetchStories(category: Category): Promise<Story[]> {
     }
     
     throw new Error('ニュースの取得に失敗しました。');
+  }
+}
+
+export async function fetchArticle(url: string): Promise<ArticleData> {
+  if (!API_BASE_URL) {
+    throw new Error('API URL is not configured.');
+  }
+
+  console.log(`Fetching article: ${url}`);
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/article?url=${encodeURIComponent(url)}`,
+      { signal: AbortSignal.timeout(30000) }
+    );
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✓ Article fetched successfully');
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch article:', error);
+    throw error;
   }
 }
 
