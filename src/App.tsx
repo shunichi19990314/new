@@ -4,6 +4,7 @@ import NewsDetail from './components/NewsDetail';
 import Header from './components/Header';
 import { fetchStories } from './api/rss';
 import type { Story, Category } from './types';
+import { AlertIcon, RefreshIcon, SearchIcon, NewsIcon } from './components/Icons';
 
 function App() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -23,7 +24,7 @@ function App() {
     const timestamp = new Date().toLocaleTimeString('ja-JP');
     const log = `[${timestamp}] ${message}`;
     console.log(log);
-    setDebugInfo(prev => [...prev.slice(-9), log]); // 最新10件のみ保持
+    setDebugInfo(prev => [...prev.slice(-9), log]);
   };
 
   const loadStories = useCallback(async (cat: Category) => {
@@ -64,29 +65,26 @@ function App() {
   const handleCategoryChange = (cat: Category) => {
     setCategory(cat);
     setSelectedStory(null);
-    setSearchQuery(''); // カテゴリ変更時に検索をクリア
-    setFilterSource('all'); // フィルタをリセット
-    setSortBy('date'); // ソートをリセット
-    setPage(0); // ページをリセット
+    setSearchQuery('');
+    setFilterSource('all');
+    setSortBy('date');
+    setPage(0);
   };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setPage(0); // 検索時にページをリセット
+    setPage(0);
   };
 
-  // ソート・フィルタ変更時にページをリセット
   useEffect(() => {
     setPage(0);
   }, [sortBy, filterSource]);
 
-  // 利用可能なソースを取得
   const availableSources = useMemo(
     () => Array.from(new Set(allStories.map(story => story.source))).sort(),
     [allStories]
   );
   
-  // 検索フィルタリング
   const filteredStories = useMemo(() => {
     return searchQuery
       ? allStories.filter(story => {
@@ -102,13 +100,11 @@ function App() {
       : allStories.filter(story => filterSource === 'all' || story.source === filterSource);
   }, [allStories, searchQuery, filterSource]);
 
-  // ソート機能
   const sortedStories = useMemo(() => {
     return [...filteredStories].sort((a, b) => {
       if (sortBy === 'date') {
-        return b.publishedAt - a.publishedAt; // 日付順（新しい順）
+        return b.publishedAt - a.publishedAt;
       } else {
-        // 関連度順（検索キーワードの一致度でソート）
         if (!searchQuery) return b.publishedAt - a.publishedAt;
         
         const query = searchQuery.toLowerCase();
@@ -123,13 +119,11 @@ function App() {
       }
     });
   }, [filteredStories, sortBy, searchQuery]);
-  // 表示するストーリーを更新
+
   useEffect(() => {
     if (searchQuery) {
-      // 検索中は全結果を表示（ページネーションなし）
       setStories(sortedStories);
     } else {
-      // 通常時はページネーション
       const start = page * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE;
       setStories(sortedStories.slice(start, end));
@@ -188,14 +182,14 @@ function App() {
         {error && (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">⚠️</span>
+              <AlertIcon size={24} className="text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
                   {error}
                 </p>
                 {error.includes('VITE_API_URL') && (
                   <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded text-sm">
-                    <p className="font-bold mb-2">🔧 設定方法：</p>
+                    <p className="font-bold mb-2">設定方法：</p>
                     <ol className="list-decimal list-inside space-y-1 text-yellow-900 dark:text-yellow-100">
                       <li>Render Dashboardでフロントエンドサービスを開く</li>
                       <li>左メニューの「Environment」をクリック</li>
@@ -208,7 +202,7 @@ function App() {
                 )}
                 {error.includes('タイムアウト') && (
                   <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded text-sm">
-                    <p className="font-bold mb-2">💡 ヒント：</p>
+                    <p className="font-bold mb-2">ヒント：</p>
                     <p className="text-yellow-900 dark:text-yellow-100">
                       無料プランは15分間アクセスがないとスリープします。<br />
                       初回アクセス時に30秒ほどお待ちください。
@@ -217,9 +211,10 @@ function App() {
                 )}
                 <button
                   onClick={() => loadStories(category)}
-                  className="mt-3 text-sm text-yellow-700 dark:text-yellow-300 underline hover:no-underline font-medium"
+                  className="mt-3 inline-flex items-center gap-1 text-sm text-yellow-700 dark:text-yellow-300 underline hover:no-underline font-medium"
                 >
-                  🔄 再読み込み
+                  <RefreshIcon size={14} />
+                  再読み込み
                 </button>
               </div>
             </div>
@@ -229,8 +224,9 @@ function App() {
         {/* 検索結果の表示 */}
         {searchQuery && !loading && (
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-blue-800 dark:text-blue-200 text-sm">
-              🔍 「<span className="font-bold">{searchQuery}</span>」の検索結果: {filteredStories.length}件
+            <p className="text-blue-800 dark:text-blue-200 text-sm flex items-center gap-2">
+              <SearchIcon size={16} />
+              「<span className="font-bold">{searchQuery}</span>」の検索結果: {filteredStories.length}件
             </p>
           </div>
         )}
@@ -244,7 +240,7 @@ function App() {
         {/* 検索結果が0件の場合 */}
         {searchQuery && !loading && filteredStories.length === 0 && (
           <div className="text-center py-12">
-            <span className="text-4xl">🔍</span>
+            <SearchIcon size={48} className="mx-auto text-gray-400 dark:text-gray-600" />
             <p className="mt-4 text-gray-500 dark:text-gray-400">
               「{searchQuery}」に一致するニュースが見つかりませんでした
             </p>
@@ -257,7 +253,7 @@ function App() {
           </div>
         )}
         
-        {/* ページネーション（検索中は非表示） */}
+        {/* ページネーション */}
         {!loading && allStories.length > 0 && !searchQuery && (
           <div className="flex justify-center items-center gap-4 mt-8 mb-6">
             <button
@@ -280,11 +276,11 @@ function App() {
           </div>
         )}
 
-        {/* デバッグ情報（開発時のみ表示） */}
+        {/* デバッグ情報 */}
         {debugInfo.length > 0 && (
           <details className="mt-8 text-xs">
             <summary className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-              🔍 デバッグ情報
+              デバッグ情報
             </summary>
             <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg font-mono text-gray-600 dark:text-gray-400">
               {debugInfo.map((log, i) => (
@@ -295,7 +291,10 @@ function App() {
         )}
       </main>
       <footer className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm border-t border-gray-200 dark:border-gray-700">
-        <p>📰 Latest News - 日本語ニュースアグリゲーター</p>
+        <div className="flex items-center justify-center gap-2">
+          <NewsIcon size={16} />
+          <p>Latest News - 日本語ニュースアグリゲーター</p>
+        </div>
         <p className="mt-1 text-xs">Powered by RSS Feeds | Render対応</p>
       </footer>
     </div>

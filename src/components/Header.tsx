@@ -1,4 +1,15 @@
 import { CATEGORIES, type Category } from '../types';
+import { NewsIcon, FireIcon, TechIcon, BriefcaseIcon, FilmIcon, TrophyIcon, MicroscopeIcon, SearchIcon, XIcon, LiveDot } from './Icons';
+
+// カテゴリーキーに対応するアイコンコンポーネント
+const CATEGORY_ICONS: Record<string, React.FC<{ className?: string; size?: number }>> = {
+  top: FireIcon,
+  tech: TechIcon,
+  business: BriefcaseIcon,
+  entertainment: FilmIcon,
+  sports: TrophyIcon,
+  science: MicroscopeIcon,
+};
 
 interface HeaderProps {
   category: Category;
@@ -28,7 +39,9 @@ export default function Header({
       <div className="max-w-4xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">📰</span>
+            <div className="text-orange-500">
+              <NewsIcon size={32} />
+            </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 Latest News
@@ -38,17 +51,14 @@ export default function Header({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              LIVE
-            </span>
-          </div>
+          <LiveDot />
         </div>
+        
         {/* 検索バー */}
         {onSearch && (
           <div className="mb-4">
             <div className="relative">
+              <SearchIcon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
@@ -56,16 +66,13 @@ export default function Header({
                 placeholder="ニュースを検索..."
                 className="w-full px-4 py-2 pl-10 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                🔍
-              </span>
               {searchQuery && (
                 <button
                   onClick={() => onSearch('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   aria-label="検索をクリア"
                 >
-                  ✕
+                  <XIcon size={16} />
                 </button>
               )}
             </div>
@@ -110,20 +117,23 @@ export default function Header({
         )}
 
         <nav className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => onCategoryChange(cat.key)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                category === cat.key
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const IconComponent = CATEGORY_ICONS[cat.key];
+            return (
+              <button
+                key={cat.key}
+                onClick={() => onCategoryChange(cat.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                  category === cat.key
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                <IconComponent size={16} />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
         </nav>
       </div>
     </header>

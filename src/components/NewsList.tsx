@@ -1,5 +1,6 @@
 import type { Story } from '../types';
 import { formatDate } from '../api/rss';
+import { UserIcon, ClockIcon, SourceIcon } from './Icons';
 
 interface NewsListProps {
   stories: Story[];
@@ -33,7 +34,12 @@ export default function NewsList({ stories, loading, onSelect }: NewsListProps) 
   if (stories.length === 0) {
     return (
       <div className="text-center py-12">
-        <span className="text-4xl">📭</span>
+        <div className="text-gray-400 dark:text-gray-600 flex justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+            <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+          </svg>
+        </div>
         <p className="mt-4 text-gray-500 dark:text-gray-400">
           ニュースが見つかりませんでした
         </p>
@@ -101,15 +107,18 @@ function NewsCard({ story, index, onClick }: NewsCardProps) {
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded">
-              📰 {domain}
+              <SourceIcon size={12} />
+              {domain}
             </span>
             {story.author && (
               <span className="flex items-center gap-1">
-                👤 {story.author}
+                <UserIcon size={12} />
+                {story.author}
               </span>
             )}
             <span className="flex items-center gap-1">
-              🕐 {formatDate(story.publishedAt)}
+              <ClockIcon size={12} />
+              {formatDate(story.publishedAt)}
             </span>
           </div>
         </div>
